@@ -170,6 +170,9 @@ def main_loop_sse(bot: WeChatBot, listen_names: list):
     # 去重缓存
     last_msg_cache = {}
 
+    # 消息合并缓冲区: {user_id: {'msgs': [(ts, content), ...], 'chat_to_open': ..., 'reply_prefix': ...}}
+    pending = {}
+
     print("\n" + "=" * 60)
     print(f"✅ 系统启动成功")
     print(f"🤖 模型: {config.MODEL_NAME}")
@@ -181,55 +184,86 @@ def main_loop_sse(bot: WeChatBot, listen_names: list):
     while True:
         try:
             msg = sse.get_message(timeout=1.0)
-            if msg is None:
-                continue
+            now = time.time()
 
-            source_name = msg.get('sourceName', '')
-            content = msg.get('content', '').strip()
-            session_type = msg.get('sessionType', 'other')
-            group_name = msg.get('groupName', '')
-            session_id = msg.get('sessionId', '')
+            # ---- 收集消息到缓冲区 ----
+            if msg is not None:
+                source_name = msg.get('sourceName', '')
+                content = msg.get('content', '').strip()
+                session_type = msg.get('sessionType', 'other')
+                group_name = msg.get('groupName', '')
+                session_id = msg.get('sessionId', '')
 
-            if not source_name or not content:
-                continue
+                if source_name and content:
+                    # 匹配监听列表
+                    is_group = session_type == 'group' and group_name
+                    if is_group:
+                        if group_name not in listen_names and source_name not in listen_names:
+                            continue
+                    else:
+                        if source_name not in listen_names:
+                            continue
 
-            # 匹配监听列表（sourceName 或 groupName 在列表中都算命中）
-            is_group = session_type == 'group' and group_name
-            if is_group:
-                if group_name not in listen_names and source_name not in listen_names:
-                    continue
-            else:
-                if source_name not in listen_names:
-                    continue
+                    # 去重
+                    cache_key = f"{session_id}:{source_name}:{content}"
+                    if cache_key == last_msg_cache.get(session_id):
+                        continue
+                    last_msg_cache[session_id] = cache_key
 
-            # 去重
-            cache_key = f"{session_id}:{source_name}:{content}"
-            if cache_key == last_msg_cache.get(session_id):
-                continue
-            last_msg_cache[session_id] = cache_key
+                    # 跳过媒体占位消息
+                    if content.startswith('[') and content.endswith(']'):
+                        continue
 
-            # 跳过媒体占位消息
-            if content.startswith('[') and content.endswith(']'):
-                continue
+                    # 群聊：打开群 → @发送者；私聊：直接打开联系人
+                    if is_group:
+                        ai_user = source_name
+                        chat_to_open = group_name
+                        reply_prefix = f"@{source_name} "
+                    else:
+                        ai_user = source_name
+                        chat_to_open = source_name
+                        reply_prefix = ''
 
-            # 群聊：打开群 → @发送者；私聊：直接打开联系人
-            if is_group:
-                ai_user = source_name  # AI 上下文以发送者为 key
-                chat_to_open = group_name
-                reply_prefix = f"@{source_name} "
-            else:
-                ai_user = source_name
-                chat_to_open = source_name
-                reply_prefix = ''
+                    # 放入缓冲区
+                    if ai_user not in pending:
+                        pending[ai_user] = {
+                            'msgs': [],
+                            'chat_to_open': chat_to_open,
+                            'reply_prefix': reply_prefix,
+                        }
+                    pending[ai_user]['msgs'].append((now, content))
 
-            process_message(
-                bot, contact_name=ai_user, content=content,
-                chat_to_open=chat_to_open, reply_prefix=reply_prefix,
-                need_hash_update=False,
-            )
+            # ---- 处理到期的缓冲区（最早消息已等待 >= MESSAGE_MERGE_DELAY 秒） ----
+            to_process = []
+            for user_id in list(pending.keys()):
+                entry = pending[user_id]
+                oldest_ts = entry['msgs'][0][0]
+                if now - oldest_ts >= config.MESSAGE_MERGE_DELAY:
+                    to_process.append(user_id)
+
+            for user_id in to_process:
+                entry = pending.pop(user_id)
+                merged_content = '\n'.join(m[1] for m in entry['msgs'])
+
+                process_message(
+                    bot, contact_name=user_id, content=merged_content,
+                    chat_to_open=entry['chat_to_open'],
+                    reply_prefix=entry['reply_prefix'],
+                    need_hash_update=False,
+                )
 
         except KeyboardInterrupt:
             print("\n\n" + "=" * 60)
+            # 退出前处理所有缓冲中的消息
+            for user_id, entry in pending.items():
+                merged_content = '\n'.join(m[1] for m in entry['msgs'])
+                print(f"🔄 处理缓冲区 [{user_id}]: {len(entry['msgs'])} 条消息")
+                process_message(
+                    bot, contact_name=user_id, content=merged_content,
+                    chat_to_open=entry['chat_to_open'],
+                    reply_prefix=entry['reply_prefix'],
+                    need_hash_update=False,
+                )
             print("👋 收到退出信号，安全关闭中...")
             print("=" * 60)
             sse.stop()
@@ -244,6 +278,7 @@ def main_loop(bot: WeChatBot, listen_names: list):
     """主消息循环"""
 
     last_msg_cache = {}  # {name: last_content}  去重用
+    pending = {}          # 消息合并缓冲区
 
     # ---- 启动时预初始化 OCR + 缓存当前消息（避免回复旧消息） ----
     if config.USE_OCR_FALLBACK:
@@ -272,17 +307,17 @@ def main_loop(bot: WeChatBot, listen_names: list):
 
     while True:
         try:
+            now = time.time()
+
+            # ---- 收集消息到缓冲区 ----
             for name in listen_names:
-                # 打开聊天
                 bot.open_chat(name)
                 time.sleep(0.5)
 
-                # 获取消息
                 messages = bot.get_latest_messages()
                 if not messages:
                     continue
 
-                # 取最新一条
                 latest = messages[-1]
                 content = latest.get("content", "").strip()
                 if not content:
@@ -298,12 +333,34 @@ def main_loop(bot: WeChatBot, listen_names: list):
                 if content.startswith("[") and content.endswith("]"):
                     continue
 
-                process_message(bot, name, content)
+                # 放入缓冲区
+                if name not in pending:
+                    pending[name] = {'msgs': [], 'chat_to_open': name, 'reply_prefix': ''}
+                pending[name]['msgs'].append((now, content))
+
+            # ---- 处理到期的缓冲区 ----
+            to_process = []
+            for user_id in list(pending.keys()):
+                entry = pending[user_id]
+                oldest_ts = entry['msgs'][0][0]
+                if now - oldest_ts >= config.MESSAGE_MERGE_DELAY:
+                    to_process.append(user_id)
+
+            for user_id in to_process:
+                entry = pending.pop(user_id)
+                merged_content = '\n'.join(m[1] for m in entry['msgs'])
+
+                process_message(bot, user_id, merged_content)
 
             time.sleep(config.POLL_INTERVAL)
 
         except KeyboardInterrupt:
             print("\n\n" + "=" * 60)
+            # 退出前处理缓冲中的消息
+            for user_id, entry in pending.items():
+                merged_content = '\n'.join(m[1] for m in entry['msgs'])
+                print(f"🔄 处理缓冲区 [{user_id}]: {len(entry['msgs'])} 条消息")
+                process_message(bot, user_id, merged_content)
             print("👋 收到退出信号，安全关闭中...")
             print("=" * 60)
             break
