@@ -2,8 +2,18 @@
 AI 回复模块 — 通过 Ollama 调用本地 DeepSeek 模型
 """
 
+import os
+import sys
 import re
 from openai import OpenAI
+
+
+def _base_dir() -> str:
+    """程序所在目录（兼容 PyInstaller 打包和源码运行）"""
+    if getattr(sys, 'frozen', False):
+        return os.path.dirname(sys.executable)
+    return os.path.dirname(os.path.abspath(__file__))
+
 
 # 从配置读取
 try:
@@ -12,25 +22,66 @@ try:
     MODEL = config.MODEL_NAME
     TEMPERATURE = config.TEMPERATURE
     MAX_TOKENS = config.MAX_TOKENS
-    SYSTEM_PROMPT = config.SYSTEM_PROMPT
+    BASE_SYSTEM_PROMPT = config.SYSTEM_PROMPT
     MAX_HISTORY_ROUNDS = config.MAX_HISTORY_ROUNDS
+    SKILLS_DIR = getattr(config, 'SKILLS_DIR', 'skills')
 except ImportError:
-    # 配置文件不存在时的默认值
     BASE_URL = 'http://localhost:11434/v1/'
     MODEL = 'deepseek-r1:7b'
     TEMPERATURE = 0.7
     MAX_TOKENS = 300
-    SYSTEM_PROMPT = (
+    BASE_SYSTEM_PROMPT = (
         "你是一个微信自动回复助手，请用自然口语化的中文回复。"
         "回复要简短，1-3句话即可，不要说自己是AI。"
     )
     MAX_HISTORY_ROUNDS = 15
+    SKILLS_DIR = 'skills'
+
+
+def _load_skills() -> str:
+    """加载 skills 目录下的所有 skill 文件，追加到系统提示词中。"""
+    skills_path = os.path.join(_base_dir(), SKILLS_DIR)
+    if not os.path.isdir(skills_path):
+        return BASE_SYSTEM_PROMPT
+
+    skill_files = []
+    for fname in os.listdir(skills_path):
+        if fname.endswith(('.txt', '.md', '.skill')):
+            skill_files.append(fname)
+    if not skill_files:
+        return BASE_SYSTEM_PROMPT
+
+    skill_files.sort()
+    parts = [BASE_SYSTEM_PROMPT, '', '--- 自定义 Skill ---']
+    for fname in skill_files:
+        fpath = os.path.join(skills_path, fname)
+        try:
+            with open(fpath, 'r', encoding='utf-8') as f:
+                content = f.read().strip()
+            if content:
+                parts.append(f'[{fname}]\n{content}')
+        except Exception as e:
+            print(f"⚠️  读取 skill 文件失败 {fname}: {e}")
+
+    if len(parts) <= 3:
+        return BASE_SYSTEM_PROMPT
+    return '\n\n'.join(parts)
+
+
+SYSTEM_PROMPT = _load_skills()
 
 # OpenAI 兼容客户端（连接本地 Ollama）
 client = OpenAI(base_url=BASE_URL, api_key='ollama')
 
 # 会话内存: {user_name: [{"role": ..., "content": ...}, ...]}
 message_table: dict = {}
+
+
+def reload_skills():
+    """重新加载 skill 文件（无需重启程序即可热更新）"""
+    global SYSTEM_PROMPT
+    SYSTEM_PROMPT = _load_skills()
+    print(f"✅ Skill 已重新加载")
 
 
 def add_user(user_name: str):
