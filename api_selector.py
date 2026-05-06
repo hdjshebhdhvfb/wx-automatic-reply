@@ -125,6 +125,17 @@ def select_model() -> tuple:
 def _select_local(config) -> tuple:
     """本地 Ollama 模型选择流程"""
     local_cfg = _load_json(LOCAL_CONFIG_PATH, {"model_name": ""})
+    saved = local_cfg.get('model_name', '')
+
+    # 有已保存配置 → 一键确认
+    if saved:
+        print(f"\n  已保存的本地模型: {saved}")
+        print("  直接回车确认，输入 n 重新选择:")
+        choice = input("> ").strip()
+        if choice == '':
+            client = OpenAI(base_url=config.OLLAMA_BASE_URL, api_key='ollama')
+            print(f"✅ 已选择本地模型: {saved}")
+            return client, saved
 
     # 拉取本地模型列表
     print("\n⏳ 正在获取本地模型列表...")
@@ -132,20 +143,17 @@ def _select_local(config) -> tuple:
         models = _fetch_local_models(config.OLLAMA_BASE_URL)
     except Exception as e:
         print(f"⚠️  无法连接 Ollama: {e}")
-        # 回退：使用配置文件中保存的或 config.py 中的默认模型
-        fallback = local_cfg.get('model_name') or config.MODEL_NAME
+        fallback = saved or config.MODEL_NAME
         print(f"  使用默认模型: {fallback}")
         client = OpenAI(base_url=config.OLLAMA_BASE_URL, api_key='ollama')
         return client, fallback
 
     if not models:
         print("❌ 未找到本地模型，请确认 Ollama 已安装模型")
-        fallback = local_cfg.get('model_name') or config.MODEL_NAME
+        fallback = saved or config.MODEL_NAME
         client = OpenAI(base_url=config.OLLAMA_BASE_URL, api_key='ollama')
         return client, fallback
 
-    # 让用户选择
-    saved = local_cfg.get('model_name', '')
     model_name = _pick_model(models, saved, "可用本地模型")
 
     local_cfg['model_name'] = model_name
@@ -164,6 +172,23 @@ def _select_api(config) -> tuple:
         "api_model_name": "",
     })
 
+    # 有完整已保存配置 → 一键确认
+    saved_key = cfg.get('api_key', '')
+    saved_model = cfg.get('api_model_name', '')
+    if saved_key and saved_model:
+        masked = saved_key[:8] + '***'
+        print(f"\n  已保存的 API 配置:")
+        print(f"    Base URL: {cfg['api_base_url']}")
+        print(f"    API Key:  {masked}")
+        print(f"    模型:     {saved_model}")
+        print("  直接回车确认，输入 n 重新设置:")
+        choice = input("> ").strip()
+        if choice == '':
+            client = OpenAI(base_url=cfg['api_base_url'], api_key=saved_key)
+            print(f"✅ 已选择: {saved_model} (API)")
+            return client, saved_model
+
+    # 完整配置流程
     # Base URL
     print(f"\n请输入 API Base URL（直接回车使用默认 {cfg['api_base_url']}）:")
     url_input = input("> ").strip()

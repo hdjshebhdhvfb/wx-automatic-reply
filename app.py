@@ -232,7 +232,11 @@ def main_loop_sse(bot: WeChatBot, listen_names: list):
                             'chat_to_open': chat_to_open,
                             'reply_prefix': reply_prefix,
                         }
-                    pending[ai_user]['msgs'].append((now, content))
+                        now_str = datetime.fromtimestamp(now).strftime("%H:%M:%S")
+                        print(f"\n  ⏳ [{now_str}] 收到 [{ai_user}] 的消息，等待 {config.MESSAGE_MERGE_DELAY}s 缓冲合并...")
+                    else:
+                        count = len(pending[ai_user]['msgs']) + 1
+                        print(f"      [{ai_user}] 缓冲中 ({count} 条消息)")
 
             # ---- 处理到期的缓冲区（最早消息已等待 >= MESSAGE_MERGE_DELAY 秒） ----
             to_process = []
@@ -337,7 +341,11 @@ def main_loop(bot: WeChatBot, listen_names: list):
                 # 放入缓冲区
                 if name not in pending:
                     pending[name] = {'msgs': [], 'chat_to_open': name, 'reply_prefix': ''}
-                pending[name]['msgs'].append((now, content))
+                    now_str = datetime.fromtimestamp(now).strftime("%H:%M:%S")
+                    print(f"\n  ⏳ [{now_str}] 收到 [{name}] 的消息，等待 {config.MESSAGE_MERGE_DELAY}s 缓冲合并...")
+                else:
+                    count = len(pending[name]['msgs']) + 1
+                    print(f"      [{name}] 缓冲中 ({count} 条消息)")
 
             # ---- 处理到期的缓冲区 ----
             to_process = []

@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark-theme">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WeChat Bot — 控制台</title>
+<style>
+  /* ============================================================
+     DESIGN TOKENS — inspired by qwq.windchan0v0.xyz
+     ============================================================ */
+  :root {
+    --aero-blur: blur(20px);
+    --aero-border: rgba(255,255,255,.12);
+    --aero-glow: 0 0 30px rgba(120,100,255,.2);
+    --aero-anim: cubic-bezier(.25,.46,.45,.94);
+    --light-bg: rgba(255,255,255,.08);
+    --light-bg-hover: rgba(255,255,255,.13);
+    --light-text: rgba(255,255,255,.92);
+    --light-text-secondary: rgba(255,255,255,.55);
+    --dark-bg: rgba(0,0,0,.35);
+    --dark-bg-hover: rgba(0,0,0,.45);
+    --dark-text: rgba(255,255,255,.92);
+    --dark-text-secondary: rgba(255,255,255,.55);
+    --dark-border: rgba(255,255,255,.12);
+    --accent: #7c6ff7;
+    --accent-dim: #5a4fd6;
+    --accent-glow: rgba(124,111,247,.35);
+    --red: #ff4757;
+    --red-glow: rgba(255,71,87,.3);
+    --yellow: #ffa502;
+    --green: #2ed573;
+    --blue: #54a0ff;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --radius-xs: 6px;
+    --font-sans: 'Noto Sans SC', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Cascadia Code', 'Consolas', monospace;
+    --transition: .35s var(--aero-anim);
+    --rainbow-angle: 60deg;
+  }
+
+  /* ============================================================
+     RESET
+     ============================================================ */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: var(--font-sans);
+    color: var(--dark-text);
+    display: flex;
+    overflow: hidden;
+  }
+
+  /* ============================================================
+     ANIMATED BACKGROUND
+     ============================================================ */
+  .bg-layer {
+    position: fixed; inset: 0; z-index: 0;
+    background: linear-gradient(135deg, #0a0a1a 0%, #111133 30%, #0f0f2e 60%, #0d0d24 100%);
+  }
+  .bg-particles {
+    position: fixed; inset: 0; z-index: 1;
+    pointer-events: none;
+  }
+  .bg-particle {
+    position: absolute;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(124,111,247,.4) 0%, transparent 70%);
+    animation: float 12s infinite ease-in-out;
+  }
+  @keyframes float {
+    0%,100% { transform: translateY(0) translateX(0) scale(1); opacity: .3; }
+    25% { transform: translateY(-40px) translateX(20px) scale(1.3); opacity: .6; }
+    50% { transform: translateY(-20px) translateX(-15px) scale(.8); opacity: .4; }
+    75% { transform: translateY(-60px) translateX(10px) scale(1.2); opacity: .5; }
+  }
+
+  /* Rainbow reflection line at top */
+  body::before {
+    content: '';
+    position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 100;
+    background: linear-gradient(90deg,
+      transparent 0%, rgba(216,15,15,.4) 10%, rgba(211,135,29,.4) 25%,
+      rgba(210,210,26,.4) 40%, rgba(19,209,22,.4) 55%,
+      rgba(20,232,193,.4) 70%, rgba(24,110,210,.5) 85%, rgba(109,30,206,.4) 100%,
+      transparent 100%
+    );
+  }
+
+  /* ============================================================
+     SIDEBAR — Glass morphism
+     ============================================================ */
+  nav {
+    width: 220px; min-width: 220px; z-index: 10;
+    backdrop-filter: var(--aero-blur);
+    background: var(--dark-bg);
+    border-right: 1px solid var(--dark-border);
+    display: flex; flex-direction: column;
+    padding: 20px 0;
+    transition: all var(--transition);
+  }
+
+  .logo {
+    font-family: var(--font-mono);
+    font-size: 20px; font-weight: 600;
+    color: var(--accent);
+    text-align: center; padding: 0 16px 18px;
+    margin-bottom: 12px;
+    letter-spacing: 2px;
+  }
+  .logo span {
+    display: block; font-size: 10px; font-weight: 400;
+    color: var(--dark-text-secondary); letter-spacing: 3px;
+    text-transform: uppercase; margin-top: 2px;
+  }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 11px 20px; margin: 1px 10px; cursor: pointer;
+    font-size: 13px; color: var(--dark-text-secondary);
+    border-radius: var(--radius-sm);
+    transition: all var(--transition);
+    font-family: var(--font-mono); letter-spacing: .5px;
+    position: relative;
+  }
+  .nav-item:hover {
+    background: var(--light-bg-hover);
+    color: var(--dark-text);
+    transform: translateX(3px);
+  }
+  .nav-item.active {
+    background: rgba(124,111,247,.12);
+    color: var(--accent);
+    box-shadow: 0 0 20px var(--accent-glow);
+  }
+  .nav-item.active::after {
+    content: '';
+    position: absolute; bottom: 3px; left: 20px; right: 20px; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: .5;
+  }
+  .nav-icon { font-size: 17px; width: 22px; text-align: center; }
+
+  .nav-spacer { flex: 1; }
+
+  .nav-status {
+    margin: 0 14px; padding: 12px 14px;
+    backdrop-filter: var(--aero-blur);
+    background: var(--dark-bg);
+    border: 1px solid var(--dark-border);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono); font-size: 11px;
+    transition: all var(--transition);
+  }
+  .nav-status .dot {
+    display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+    margin-right: 6px; transition: all var(--transition);
+  }
+  .dot.online {
+    background: var(--green);
+    box-shadow: 0 0 10px rgba(46,213,115,.6);
+    animation: pulse-dot 2s infinite;
+  }
+  .dot.offline { background: var(--red); }
+  @keyframes pulse-dot {
+    0%,100% { box-shadow: 0 0 6px rgba(46,213,115,.4); }
+    50% { box-shadow: 0 0 18px rgba(46,213,115,.8); }
+  }
+
+  /* Theme toggle */
+  .theme-toggle {
+    margin: 8px 14px; display: flex; align-items: center; gap: 8px;
+    cursor: pointer; font-family: var(--font-mono); font-size: 11px;
+    color: var(--dark-text-secondary);
+    padding: 8px 12px; border-radius: var(--radius-xs);
+    transition: all var(--transition);
+  }
+  .theme-toggle:hover { background: var(--light-bg-hover); }
+  .toggle-track {
+    width: 40px; height: 22px; border-radius: 11px;
+    background: rgba(255,255,255,.15);
+    position: relative; transition: background .3s;
+  }
+  .toggle-track.on { background: var(--accent); }
+  .toggle-knob {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: #fff; position: absolute;
+    top: 2px; left: 2px;
+    transition: transform .3s cubic-bezier(.4,0,.2,1);
+    box-shadow: 0 2px 4px rgba(0,0,0,.3);
+  }
+  .toggle-track.on .toggle-knob { transform: translateX(18px); }
+
+  /* ============================================================
+     MAIN CONTENT
+     ============================================================ */
+  main {
+    flex: 1; display: flex; flex-direction: column;
+    overflow: hidden; z-index: 5; position: relative;
+  }
+  .tab-content {
+    display: none; flex: 1; overflow-y: auto; padding: 28px 32px;
+    position: relative; z-index: 1;
+  }
+  .tab-content.active { display: flex; flex-direction: column; }
+
+  .section-title {
+    font-family: var(--font-mono); font-size: 12px;
+    color: var(--accent); letter-spacing: 3px; text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+
+  /* ============================================================
+     GLASS CARD
+     ============================================================ */
+  .glass-card {
+    backdrop-filter: var(--aero-blur);
+    background: var(--dark-bg);
+    border: 1px solid var(--dark-border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    transition: all var(--transition);
+  }
+  .glass-card:hover {
+    border-color: rgba(255,255,255,.18);
+    box-shadow: var(--aero-glow), 0 6px 24px rgba(0,0,0,.25);
+  }
+  .glass-card h3 {
+    font-family: var(--font-mono); font-size: 13px;
+    color: var(--accent); margin-bottom: 14px;
+    letter-spacing: 1px; font-weight: 500;
+  }
+  .glass-card .subtitle {
+    font-size: 11px; color: var(--dark-text-secondary);
+    font-family: var(--font-mono); letter-spacing: 1px;
+  }
+
+  /* ============================================================
+     DASHBOARD STATUS CARDS
+     ============================================================ */
+  .status-bar {
+    display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap;
+  }
+  .status-card {
+    flex: 1; min-width: 140px;
+    backdrop-filter: var(--aero-blur);
+    background: var(--dark-bg);
+    border: 1px solid var(--dark-border);
+    border-radius: var(--radius); padding: 18px 20px;
+    transition: all var(--transition);
+  }
+  .status-card .label {
+    font-size: 10px; color: var(--dark-text-secondary);
+    text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px;
+    font-family: var(--font-mono);
+  }
+  .status-card .value {
+    font-size: 20px; font-weight: 700; color: var(--dark-text);
+    font-family: var(--font-mono);
+  }
+  .status-card .value.accent { color: var(--accent); }
+
+  /* ============================================================
+     BUTTONS
+     ============================================================ */
+  .btn-row { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+
+  .btn {
+    padding: 10px 26px;
+    background: var(--light-bg);
+    border: 1px solid var(--dark-border);
+    color: var(--dark-text);
+    font-family: var(--font-mono); font-size: 13px;
+    cursor: pointer; border-radius: var(--radius-sm);
+    letter-spacing: .5px;
+    transition: all var(--transition);
+    backdrop-filter: var(--aero-blur);
+    white-space: nowrap;
+  }
+  .btn:hover {
+    background: var(--light-bg-hover);
+    border-color: rgba(255,255,255,.25);
+    transform: translateY(-1px);
+  }
+  .btn.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff; font-weight: 600;
+    box-shadow: 0 4px 16px var(--accent-glow);
+  }
+  .btn.primary:hover {
+    background: var(--accent-dim);
+    box-shadow: 0 6px 24px var(--accent-glow);
+  }
+  .btn.danger {
+    border-color: var(--red); color: var(--red);
+  }
+  .btn.danger:hover {
+    background: rgba(255,71,87,.12);
+    box-shadow: 0 0 20px var(--red-glow);
+  }
+  .btn:disabled {
+    opacity: .35; cursor: not-allowed; transform: none;
+  }
+  .btn.sm { font-size: 11px; padding: 5px 14px; }
+
+  /* ============================================================
+     LOG VIEWER — terminal style
+     ============================================================ */
+  .log-container {
+    flex: 1; min-height: 280px;
+    backdrop-filter: var(--aero-blur);
+    background: rgba(0,0,0,.5);
+    border: 1px solid var(--dark-border);
+    border-radius: var(--radius); overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .log-header {
+    padding: 8px 16px;
+    background: rgba(255,255,255,.04);
+    border-bottom: 1px solid var(--dark-border);
+    font-family: var(--font-mono); font-size: 10px;
+    color: var(--dark-text-secondary); letter-spacing: 2px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .log-body {
+    flex: 1; overflow-y: auto; padding: 14px 16px;
+    font-family: var(--font-mono); font-size: 12px;
+    line-height: 1.8; color: #8fbc8f;
+  }
+  .log-body .line {
+    white-space: pre-wrap; word-break: break-all;
+    animation: logIn .2s ease;
+  }
+  .log-body .line .ts { color: #4a6a4a; margin-right: 8px; }
+  @keyframes logIn { from { opacity: 0; transform: translateY(3px); } }
+
+  /* ============================================================
+     FORMS
+     ============================================================ */
+  .form-row {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 12px; flex-wrap: wrap;
+  }
+  .form-row label {
+    font-size: 12px; color: var(--dark-text-secondary);
+    min-width: 90px; font-family: var(--font-mono);
+    letter-spacing: .5px;
+  }
+  input, select, textarea {
+    background: rgba(255,255,255,.06);
+    border: 1px solid var(--dark-border);
+    color: var(--dark-text); padding: 9px 14px; border-radius: var(--radius-xs);
+    font-family: var(--font-mono); font-size: 13px;
+    outline: none; transition: all var(--transition);
+    backdrop-filter: blur(4px);
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(124,111,247,.12);
+  }
+  input[type="number"] { max-width: 110px; }
+  input[readonly] { opacity: .6; }
+
+  .source-toggle {
+    display: flex; gap: 0; margin-bottom: 14px;
+    border: 1px solid var(--dark-border); border-radius: var(--radius-sm);
+    overflow: hidden; width: fit-content;
+  }
+  .source-toggle button {
+    padding: 8px 22px; border: none; cursor: pointer;
+    font-family: var(--font-mono); font-size: 13px;
+    background: transparent; color: var(--dark-text-secondary);
+    transition: all var(--transition);
+  }
+  .source-toggle button.active {
+    background: var(--accent); color: #fff;
+    box-shadow: 0 0 16px var(--accent-glow);
+  }
+  .source-toggle button:not(.active):hover { background: var(--light-bg-hover); }
+
+  .model-list {
+    max-height: 200px; overflow-y: auto;
+    background: rgba(0,0,0,.25); border: 1px solid var(--dark-border);
+    border-radius: var(--radius-xs); margin-top: 8px;
+  }
+  .model-item {
+    padding: 9px 16px; cursor: pointer;
+    font-family: var(--font-mono); font-size: 12px;
+    border-bottom: 1px solid var(--dark-border);
+    transition: all .15s;
+  }
+  .model-item:last-child { border-bottom: none; }
+  .model-item:hover { background: rgba(124,111,247,.08); }
+  .model-item.selected {
+    background: rgba(124,111,247,.14); color: var(--accent);
+  }
+
+  .msg { font-size: 11px; font-family: var(--font-mono); }
+  .msg.error { color: var(--red); }
+  .msg.success { color: var(--green); }
+
+  /* ============================================================
+     TEXTAREA & LISTS
+     ============================================================ */
+  textarea.friends-editor {
+    width: 100%; height: 260px; resize: vertical;
+    background: rgba(0,0,0,.3);
+    border: 1px solid var(--dark-border);
+    color: var(--dark-text); padding: 14px; border-radius: var(--radius-xs);
+    font-family: var(--font-mono); font-size: 13px;
+    outline: none; line-height: 1.7;
+  }
+  textarea.friends-editor:focus { border-color: var(--accent); }
+
+  .list-panel {
+    backdrop-filter: var(--aero-blur);
+    background: var(--dark-bg);
+    border: 1px solid var(--dark-border);
+    border-radius: var(--radius); overflow: hidden;
+  }
+  .list-item {
+    padding: 14px 18px; border-bottom: 1px solid var(--dark-border);
+    font-family: var(--font-mono); font-size: 13px; transition: all .15s;
+  }
+  .list-item:last-child { border-bottom: none; }
+  .list-item:hover { background: var(--light-bg-hover); }
+  .list-item .meta { color: var(--dark-text-secondary); font-size: 11px; margin-bottom: 4px; }
+
+  .user-filter {
+    display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap;
+  }
+  .user-filter button {
+    padding: 6px 16px; border: 1px solid var(--dark-border);
+    background: var(--light-bg); color: var(--dark-text-secondary);
+    cursor: pointer; border-radius: var(--radius-xs);
+    font-family: var(--font-mono); font-size: 12px;
+    transition: all .15s;
+    backdrop-filter: blur(4px);
+  }
+  .user-filter button:hover, .user-filter button.active {
+    border-color: var(--accent); color: var(--accent);
+    background: rgba(124,111,247,.1);
+  }
+
+  /* ============================================================
+     SKILLS LAYOUT
+     ============================================================ */
+  .skills-layout {
+    display: flex; gap: 18px; flex: 1; min-height: 0;
+  }
+  .skill-sidebar {
+    width: 210px; min-width: 210px;
+    backdrop-filter: var(--aero-blur);
+    background: var(--dark-bg);
+    border: 1px solid var(--dark-border);
+    border-radius: var(--radius); overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .ss-header {
+    padding: 10px 14px; border-bottom: 1px solid var(--dark-border);
+    font-family: var(--font-mono); font-size: 11px;
+    color: var(--accent); letter-spacing: 1px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .ss-list { flex: 1; overflow-y: auto; }
+  .skill-item {
+    padding: 10px 14px; cursor: pointer;
+    border-bottom: 1px solid var(--dark-border);
+    font-family: var(--font-mono); font-size: 12px;
+    color: var(--dark-text-secondary);
+    transition: all .15s;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .skill-item:last-child { border-bottom: none; }
+  .skill-item:hover { background: var(--light-bg-hover); color: var(--dark-text); }
+  .skill-item.active {
+    background: rgba(124,111,247,.1); color: var(--accent);
+  }
+  .skill-item .del-btn {
+    opacity: 0; background: none; border: none; color: var(--red);
+    cursor: pointer; font-size: 15px; padding: 0 4px; transition: opacity .15s;
+  }
+  .skill-item:hover .del-btn { opacity: 1; }
+
+  .skill-editor {
+    flex: 1; display: flex; flex-direction: column;
+    backdrop-filter: var(--aero-blur);
+    background: var(--dark-bg);
+    border: 1px solid var(--dark-border);
+    border-radius: var(--radius); overflow: hidden;
+  }
+  .se-header {
+    padding: 10px 14px; border-bottom: 1px solid var(--dark-border);
+    font-family: var(--font-mono); font-size: 11px;
+    color: var(--dark-text-secondary); letter-spacing: 1px;
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 8px;
+  }
+  .se-header input {
+    background: rgba(0,0,0,.3); border: 1px solid var(--dark-border);
+    color: var(--dark-text); padding: 5px 12px; border-radius: var(--radius-xs);
+    font-family: var(--font-mono); font-size: 12px; outline: none; width: 200px;
+  }
+  .se-header input:focus { border-color: var(--accent); }
+  .skill-editor textarea {
+    flex: 1; width: 100%; resize: none;
+    background: rgba(0,0,0,.3); border: none;
+    color: #8fbc8f; padding: 14px;
+    font-family: var(--font-mono); font-size: 13px;
+    line-height: 1.7; outline: none;
+  }
+  .skill-editor textarea:focus { box-shadow: inset 0 0 0 1px var(--accent); }
+  .se-footer {
+    padding: 8px 14px; border-top: 1px solid var(--dark-border);
+    display: flex; gap: 8px;
+  }
+
+  /* ============================================================
+     MODAL (glass)
+     ============================================================ */
+  .modal-backdrop {
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,.55);
+    backdrop-filter: blur(6px);
+    display: flex; align-items: center; justify-content: center;
+    animation: fadeIn .2s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; } }
+  .modal-window {
+    min-width: 380px; max-width: 520px;
+    backdrop-filter: var(--aero-blur);
+    background: rgba(20,20,50,.92);
+    border: 1px solid var(--dark-border);
+    border-radius: var(--radius);
+    box-shadow: var(--aero-glow), 0 12px 48px rgba(0,0,0,.5);
+    overflow: hidden;
+    animation: modalIn .25s var(--aero-anim);
+  }
+  @keyframes modalIn { from { opacity: 0; transform: translateY(20px) scale(.96); } }
+  .modal-header {
+    padding: 16px 20px; border-bottom: 1px solid var(--dark-border);
+    font-family: var(--font-mono); font-size: 14px;
+    color: var(--accent); letter-spacing: 1px;
+  }
+  .modal-body { padding: 20px; font-size: 14px; color: var(--dark-text-secondary); line-height: 1.6; }
+  .modal-footer {
+    padding: 12px 20px; border-top: 1px solid var(--dark-border);
+    display: flex; justify-content: flex-end; gap: 10px;
+  }
+
+  /* ============================================================
+     SCROLLBAR
+     ============================================================ */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.08); border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.16); }
+
+  /* ============================================================
+     RESPONSIVE
+     ============================================================ */
+  @media (max-width: 768px) {
+    nav { width: 60px; min-width: 60px; }
+    nav .nav-item { padding: 11px 16px; justify-content: center; }
+    nav .nav-item span:not(.nav-icon) { display: none; }
+    nav .logo { font-size: 16px; }
+    .tab-content { padding: 20px 16px; }
+    .status-bar { gap: 10px; }
+    .status-card { min-width: 120px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Animated background -->
+<div class="bg-layer"></div>
+<div class="bg-particles" id="particles"></div>
+
+<!-- ============================================================
+     MODAL CONTAINER
+     ============================================================ -->
+<div id="modalRoot"></div>
+
+<!-- ============================================================
+     SIDEBAR
+     ============================================================ -->
+<nav>
+  <div class="logo">
+    WX<span>Control Panel</span>
+  </div>
+  <div class="nav-item active" data-tab="dashboard">
+    <span class="nav-icon">◈</span> 仪表盘
+  </div>
+  <div class="nav-item" data-tab="settings">
+    <span class="nav-icon">⚙</span> 设置
+  </div>
+  <div class="nav-item" data-tab="friends">
+    <span class="nav-icon">👥</span> 好友管理
+  </div>
+  <div class="nav-item" data-tab="history">
+    <span class="nav-icon">📋</span> 聊天记录
+  </div>
+  <div class="nav-item" data-tab="skills">
+    <span class="nav-icon">🧩</span> 技能管理
+  </div>
+  <div class="nav-spacer"></div>
+  <div class="nav-status" id="navStatus">
+    <span class="dot offline" id="navDot"></span>
+    <span id="navState">未启动</span>
+  </div>
+</nav>
+
+<!-- ============================================================
+     MAIN
+     ============================================================ -->
+<main>
+
+  <!-- DASHBOARD -->
+  <div class="tab-content active" id="dashboard">
+    <div class="section-title">◆ 系统状态</div>
+    <div class="status-bar">
+      <div class="status-card">
+        <div class="label">状态</div>
+        <div class="value" id="dashState">已停止</div>
+      </div>
+      <div class="status-card">
+        <div class="label">模型</div>
+        <div class="value" id="dashModel">—</div>
+      </div>
+      <div class="status-card">
+        <div class="label">监听好友</div>
+        <div class="value" id="dashListeners">0</div>
+      </div>
+      <div class="status-card">
+        <div class="label">运行时长</div>
+        <div class="value" id="dashUptime">—</div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn primary" id="btnStart" onclick="startBot()">▶ 启动</button>
+      <button class="btn danger" id="btnStop" onclick="stopBot()" disabled>■ 停止</button>
+    </div>
+    <div class="section-title">◆ 实时日志</div>
+    <div class="log-container">
+      <div class="log-header">
+        <span>TERMINAL OUTPUT</span>
+        <span id="logCount">0 lines</span>
+      </div>
+      <div class="log-body" id="logBody">
+        <div style="color:var(--dark-text-secondary)">等待启动...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="tab-content" id="settings">
+    <div class="section-title">◆ 模型配置</div>
+    <div class="glass-card" style="margin-bottom:18px">
+      <h3>模型来源</h3>
+      <div class="source-toggle" id="sourceToggle">
+        <button class="active" data-src="local" onclick="switchSource('local')">本地 Ollama</button>
+        <button data-src="api" onclick="switchSource('api')">第三方 API</button>
+      </div>
+      <div id="localSection">
+        <div class="form-row">
+          <button class="btn" onclick="fetchLocalModels()">拉取本地模型列表</button>
+          <span class="msg" id="localMsg"></span>
+        </div>
+        <div class="model-list" id="localModelList" style="display:none"></div>
+        <div class="form-row" style="margin-top:8px">
+          <label>选中模型:</label>
+          <input type="text" id="localModelSelected" readonly placeholder="未选择">
+        </div>
+      </div>
+      <div id="apiSection" style="display:none">
+        <div class="form-row">
+          <label>Base URL:</label>
+          <input type="text" id="apiBaseUrl" placeholder="https://api.deepseek.com/v1/">
+        </div>
+        <div class="form-row">
+          <label>API Key:</label>
+          <input type="password" id="apiKey" placeholder="sk-...">
+        </div>
+        <div class="form-row">
+          <button class="btn" onclick="fetchApiModels()">拉取模型列表</button>
+          <span class="msg" id="apiMsg"></span>
+        </div>
+        <div class="model-list" id="apiModelList" style="display:none"></div>
+        <div class="form-row" style="margin-top:8px">
+          <label>选中模型:</label>
+          <input type="text" id="apiModelSelected" readonly placeholder="未选择">
+        </div>
+      </div>
+      <div class="form-row" style="margin-top:14px">
+        <button class="btn primary" onclick="saveModelConfig()">✓ 应用模型配置</button>
+        <span class="msg" id="configMsg"></span>
+      </div>
+    </div>
+    <div class="glass-card">
+      <h3>回复设置</h3>
+      <div class="subtitle" style="margin-bottom:14px">修改后需重启生效</div>
+      <div class="form-row">
+        <label>回复延迟(s):</label>
+        <input type="number" id="replyDelay" step="0.1" min="0" max="10">
+      </div>
+      <div class="form-row">
+        <label>消息缓冲(s):</label>
+        <input type="number" id="mergeDelay" step="0.5" min="0" max="30">
+      </div>
+      <div class="form-row">
+        <label>温度:</label>
+        <input type="number" id="temperature" step="0.1" min="0" max="1">
+      </div>
+      <div class="form-row">
+        <label>最大 Token:</label>
+        <input type="number" id="maxTokens" step="50" min="50" max="4000">
+      </div>
+    </div>
+  </div>
+
+  <!-- FRIENDS -->
+  <div class="tab-content" id="friends">
+    <div class="section-title">◆ 好友列表</div>
+    <div class="glass-card">
+      <h3>编辑监听列表 (每行一个好友名称)</h3>
+      <textarea class="friends-editor" id="friendsEditor" placeholder="张三&#10;李四&#10;"></textarea>
+      <div class="form-row" style="margin-top:12px">
+        <button class="btn primary" onclick="saveFriends()">保存好友列表</button>
+        <span class="msg" id="friendsMsg"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="tab-content" id="history">
+    <div class="section-title">◆ 聊天记录</div>
+    <div class="user-filter" id="userFilter"></div>
+    <div class="list-panel" id="historyList">
+      <div style="padding:20px;color:var(--dark-text-secondary);text-align:center">请选择好友查看记录</div>
+    </div>
+  </div>
+
+  <!-- SKILLS -->
+  <div class="tab-content" id="skills">
+    <div class="section-title">◆ 技能管理 — 自定义 AI 回复行为</div>
+    <div class="skills-layout">
+      <div class="skill-sidebar">
+        <div class="ss-header">
+          <span>SKILLS</span>
+          <button class="btn sm" onclick="createSkill()">+ 新建</button>
+        </div>
+        <div class="ss-list" id="skillList"></div>
+      </div>
+      <div class="skill-editor" id="skillEditor" style="display:none">
+        <div class="se-header">
+          <input type="text" id="skillName" placeholder="skill名称.md">
+          <span class="msg" id="skillMsg"></span>
+        </div>
+        <textarea id="skillContent" placeholder="在此编写 skill 内容...&#10;&#10;这些内容会被追加到 AI 系统提示词中，用于定制回复风格和行为。"></textarea>
+        <div class="se-footer">
+          <button class="btn primary" onclick="saveSkill()">保存</button>
+          <button class="btn danger" onclick="deleteSkill()">删除</button>
+          <button class="btn" onclick="reloadSkills()" style="margin-left:auto">🔄 重新加载技能</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ============================================================
+     SCRIPTS (functionality unchanged)
+     ============================================================ -->
+<script>
+// ============================================================
+// Particles Background
+// ============================================================
+(function initParticles() {
+  const container = document.getElementById('particles');
+  const colors = ['rgba(124,111,247,.35)','rgba(84,160,255,.25)','rgba(46,213,115,.2)','rgba(255,165,2,.15)','rgba(255,71,87,.15)'];
+  for (let i = 0; i < 15; i++) {
+    const p = document.createElement('div');
+    p.className = 'bg-particle';
+    p.style.cssText = [
+      `width:${40+Math.random()*120}px`,
+      `height:${40+Math.random()*120}px`,
+      `left:${Math.random()*100}%`,
+      `top:${Math.random()*100}%`,
+      `animation-delay:${Math.random()*12}s`,
+      `animation-duration:${8+Math.random()*16}s`,
+      `background:radial-gradient(circle,${colors[Math.floor(Math.random()*colors.length)]} 0%,transparent 70%)`,
+    ].join(';');
+    container.appendChild(p);
+  }
+})();
+
+// ============================================================
+// Modal (replaces alert/prompt)
+// ============================================================
+function showModal(title, body, buttons) {
+  const root = document.getElementById('modalRoot');
+  const backdrop = document.createElement('div');
+  backdrop.className = 'modal-backdrop';
+  backdrop.innerHTML = `
+    <div class="modal-window">
+      <div class="modal-header">${title}</div>
+      <div class="modal-body">${body}</div>
+      <div class="modal-footer">${buttons.map((b,i) =>
+        `<button class="btn${b.primary?' primary':''}${b.danger?' danger':''}" data-idx="${i}">${b.text}</button>`
+      ).join('')}</div>
+    </div>`;
+  root.appendChild(backdrop);
+
+  return new Promise(resolve => {
+    backdrop.querySelector('.modal-footer').addEventListener('click', e => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+      const idx = parseInt(btn.dataset.idx);
+      root.removeChild(backdrop);
+      resolve(idx);
+    });
+    backdrop.addEventListener('click', e => {
+      if (e.target === backdrop) { root.removeChild(backdrop); resolve(-1); }
+    });
+  });
+}
+
+async function modalAlert(msg) {
+  await showModal('提示', msg, [{text:'确定', primary:true}]);
+}
+
+async function modalConfirm(msg) {
+  const idx = await showModal('确认', msg, [{text:'取消'},{text:'确定', primary:true}]);
+  return idx === 1;
+}
+
+async function modalPrompt(msg, defaultValue) {
+  const root = document.getElementById('modalRoot');
+  const backdrop = document.createElement('div');
+  backdrop.className = 'modal-backdrop';
+  backdrop.innerHTML = `
+    <div class="modal-window">
+      <div class="modal-header">输入</div>
+      <div class="modal-body">
+        <div style="margin-bottom:8px">${msg}</div>
+        <input id="modalInput" style="width:100%" value="${defaultValue||''}">
+      </div>
+      <div class="modal-footer">
+        <button class="btn" data-act="cancel">取消</button>
+        <button class="btn primary" data-act="ok">确定</button>
+      </div>
+    </div>`;
+  root.appendChild(backdrop);
+
+  const input = backdrop.querySelector('#modalInput');
+  input.focus(); input.select();
+  return new Promise(resolve => {
+    backdrop.querySelector('.modal-footer').addEventListener('click', e => {
+      const act = e.target.dataset.act;
+      root.removeChild(backdrop);
+      resolve(act === 'ok' ? input.value.trim() : null);
+    });
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { root.removeChild(backdrop); resolve(input.value.trim()); }
+      if (e.key === 'Escape') { root.removeChild(backdrop); resolve(null); }
+    });
+  });
+}
+
+// ============================================================
+// Navigation
+// ============================================================
+const tabs = ['dashboard','settings','friends','history','skills'];
+let currentTab = 'dashboard';
+
+document.querySelectorAll('.nav-item[data-tab]').forEach(el => {
+  el.addEventListener('click', () => {
+    currentTab = el.dataset.tab;
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    el.classList.add('active');
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.getElementById(currentTab).classList.add('active');
+    if (currentTab === 'history') loadHistoryUsers();
+    if (currentTab === 'settings') loadConfig();
+    if (currentTab === 'friends') loadFriends();
+    if (currentTab === 'skills') loadSkills();
+  });
+});
+
+// ============================================================
+// Status polling
+// ============================================================
+async function pollStatus() {
+  try {
+    const r = await fetch('/api/status');
+    const s = await r.json();
+    updateStatusUI(s);
+  } catch(e) {}
+}
+
+function updateStatusUI(s) {
+  const dot = document.getElementById('navDot');
+  const navState = document.getElementById('navState');
+  const dashState = document.getElementById('dashState');
+  const dashModel = document.getElementById('dashModel');
+  const dashListeners = document.getElementById('dashListeners');
+  const dashUptime = document.getElementById('dashUptime');
+  const btnStart = document.getElementById('btnStart');
+  const btnStop = document.getElementById('btnStop');
+
+  if (s.state === 'running') {
+    dot.className = 'dot online';
+    navState.textContent = '运行中';
+    dashState.textContent = '运行中';
+    dashState.style.color = 'var(--green)';
+    btnStart.disabled = true; btnStop.disabled = false;
+  } else if (s.state === 'starting' || s.state === 'stopping') {
+    dot.className = 'dot online';
+    navState.textContent = s.state === 'starting' ? '启动中...' : '停止中...';
+    dashState.textContent = s.state === 'starting' ? '启动中...' : '停止中...';
+    dashState.style.color = 'var(--yellow)';
+    btnStart.disabled = true; btnStop.disabled = true;
+  } else {
+    dot.className = 'dot offline';
+    navState.textContent = s.error || '未启动';
+    dashState.textContent = s.error ? '错误' : '已停止';
+    dashState.style.color = s.error ? 'var(--red)' : 'var(--dark-text-secondary)';
+    btnStart.disabled = false; btnStop.disabled = true;
+  }
+
+  dashModel.textContent = s.model || '—';
+  dashListeners.textContent = (s.listeners || []).length;
+  const uptime = s.uptime || 0;
+  const h = Math.floor(uptime / 3600), m = Math.floor((uptime % 3600) / 60), sec = Math.floor(uptime % 60);
+  dashUptime.textContent = uptime > 0 ? `${h}h ${m}m ${sec}s` : '—';
+}
+
+// ============================================================
+// Start / Stop
+// ============================================================
+async function startBot() {
+  try {
+    const fr = await fetch('/api/friends');
+    const fd = await fr.json();
+    if (!fd.friends.length) {
+      await modalAlert('请先在「好友管理」中添加监听好友');
+      return;
+    }
+    const r = await fetch('/api/start', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({listeners: fd.friends, use_sse: true})
+    });
+    const data = await r.json();
+    if (!data.ok) await modalAlert('启动失败: ' + (data.state || ''));
+  } catch(e) {
+    await modalAlert('启动失败: ' + e.message);
+  }
+}
+
+async function stopBot() {
+  try { await fetch('/api/stop', {method:'POST'}); } catch(e) {}
+}
+
+// ============================================================
+// SSE Log stream
+// ============================================================
+let logCount = 0;
+const MAX_LOG_LINES = 500;
+
+function connectLogStream() {
+  const es = new EventSource('/api/logs/stream');
+  es.onmessage = (e) => {
+    try { const d = JSON.parse(e.data); if (d.type === 'log') appendLog(d.msg); } catch(ex) {}
+  };
+  es.onerror = () => { setTimeout(connectLogStream, 3000); es.close(); };
+}
+
+function appendLog(msg) {
+  const body = document.getElementById('logBody');
+  if (logCount === 0) body.innerHTML = '';
+  const div = document.createElement('div');
+  div.className = 'line';
+  const tsMatch = msg.match(/^\[(\d{2}:\d{2}:\d{2})\]/);
+  div.innerHTML = tsMatch
+    ? `<span class="ts">${tsMatch[0]}</span>${escapeHtml(msg.slice(tsMatch[0].length))}`
+    : escapeHtml(msg);
+  body.appendChild(div);
+  body.scrollTop = body.scrollHeight;
+  logCount++;
+  while (body.children.length > MAX_LOG_LINES) body.removeChild(body.firstChild);
+  document.getElementById('logCount').textContent = logCount + ' lines';
+}
+
+function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+// ============================================================
+// Settings
+// ============================================================
+let currentSource = 'local', selectedLocalModel = '', selectedApiModel = '', savedApiKey = '';
+
+async function loadConfig() {
+  try {
+    const r = await fetch('/api/config'); const c = await r.json();
+    selectedLocalModel = c.local_model || '';
+    document.getElementById('localModelSelected').value = selectedLocalModel;
+    // 保存真实 API Key 到变量，masked 版显示在输入框
+    savedApiKey = c.api_config.api_key || '';
+    if (c.api_config.api_key_masked) document.getElementById('apiKey').value = c.api_config.api_key_masked;
+    document.getElementById('apiBaseUrl').value = c.api_config.api_base_url || 'https://api.deepseek.com/v1/';
+    selectedApiModel = c.api_config.api_model_name || '';
+    document.getElementById('apiModelSelected').value = selectedApiModel;
+    document.getElementById('replyDelay').value = c.reply_delay;
+    document.getElementById('mergeDelay').value = c.message_merge_delay;
+    document.getElementById('temperature').value = c.temperature;
+    document.getElementById('maxTokens').value = c.max_tokens;
+  } catch(e) {}
+}
+
+function switchSource(src) {
+  currentSource = src;
+  document.querySelectorAll('#sourceToggle button').forEach(b => b.classList.remove('active'));
+  document.querySelector(`#sourceToggle button[data-src="${src}"]`).classList.add('active');
+  document.getElementById('localSection').style.display = src === 'local' ? '' : 'none';
+  document.getElementById('apiSection').style.display = src === 'api' ? '' : 'none';
+}
+
+async function fetchLocalModels() {
+  const msg = document.getElementById('localMsg'); const list = document.getElementById('localModelList');
+  msg.textContent = '⏳ 正在获取...'; msg.className = 'msg';
+  try {
+    const r = await fetch('/api/models/local'); const d = await r.json();
+    if (!d.ok) throw new Error(d.error);
+    renderModelList(list, d.models, 'local');
+    msg.textContent = `✓ 找到 ${d.models.length} 个模型`; msg.className = 'msg success';
+  } catch(e) { msg.textContent = '✗ ' + e.message; msg.className = 'msg error'; }
+}
+
+async function fetchApiModels() {
+  const msg = document.getElementById('apiMsg'); const list = document.getElementById('apiModelList');
+  const keyInput = document.getElementById('apiKey'); const urlInput = document.getElementById('apiBaseUrl');
+  let apiKey = keyInput.value.trim();
+  // 输入框是 masked 版本时，优先使用从配置加载的真实 Key
+  if (apiKey.includes('***') && savedApiKey) {
+    apiKey = savedApiKey;
+  }
+  if (apiKey.includes('***')) {
+    apiKey = await modalPrompt('请输入完整的 API Key:', savedApiKey||'');
+    if (!apiKey) return;
+    savedApiKey = apiKey;
+    keyInput.value = apiKey;
+  }
+  msg.textContent = '⏳ 正在获取...'; msg.className = 'msg';
+  try {
+    const r = await fetch('/api/models/api/fetch', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({api_key: apiKey, base_url: urlInput.value.trim()})
+    });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.error);
+    renderModelList(list, d.models, 'api');
+    msg.textContent = `✓ 找到 ${d.models.length} 个模型`; msg.className = 'msg success';
+  } catch(e) { msg.textContent = '✗ ' + e.message; msg.className = 'msg error'; }
+}
+
+function renderModelList(listEl, models, type) {
+  listEl.style.display = ''; listEl.innerHTML = '';
+  const current = type === 'local' ? selectedLocalModel : selectedApiModel;
+  models.forEach(m => {
+    const div = document.createElement('div'); div.className = 'model-item';
+    if (m === current) div.classList.add('selected');
+    div.textContent = m;
+    div.addEventListener('click', () => {
+      listEl.querySelectorAll('.model-item').forEach(d => d.classList.remove('selected'));
+      div.classList.add('selected');
+      if (type === 'local') { selectedLocalModel = m; document.getElementById('localModelSelected').value = m; }
+      else { selectedApiModel = m; document.getElementById('apiModelSelected').value = m; }
+    });
+    listEl.appendChild(div);
+  });
+}
+
+async function saveModelConfig() {
+  const msg = document.getElementById('configMsg'); msg.className = 'msg';
+  if (currentSource === 'local') {
+    if (!selectedLocalModel) { msg.textContent = '请先选择本地模型'; msg.className = 'msg error'; return; }
+    try {
+      const r = await fetch('/api/models/select', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({source: 'local', model_name: selectedLocalModel})
+      });
+      const d = await r.json();
+      if (d.ok) { msg.textContent = `✓ 已应用: ${d.model}`; msg.className = 'msg success'; }
+      else throw new Error(d.error);
+    } catch(e) { msg.textContent = '✗ ' + e.message; msg.className = 'msg error'; }
+  } else {
+    let apiKey = document.getElementById('apiKey').value.trim();
+    if (apiKey.includes('***') && savedApiKey) apiKey = savedApiKey;
+    const baseUrl = document.getElementById('apiBaseUrl').value.trim();
+    if (!apiKey || apiKey.includes('***')) { msg.textContent = '请先输入 API Key'; msg.className = 'msg error'; return; }
+    if (!selectedApiModel) { msg.textContent = '请先选择 API 模型'; msg.className = 'msg error'; return; }
+    try {
+      const r = await fetch('/api/models/select', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({source: 'api', api_key: apiKey, base_url: baseUrl, model_name: selectedApiModel})
+      });
+      const d = await r.json();
+      if (d.ok) { msg.textContent = `✓ 已应用: ${d.model}`; msg.className = 'msg success'; }
+      else throw new Error(d.error);
+    } catch(e) { msg.textContent = '✗ ' + e.message; msg.className = 'msg error'; }
+  }
+}
+
+// ============================================================
+// Friends
+// ============================================================
+async function loadFriends() {
+  try { const r = await fetch('/api/friends'); const d = await r.json();
+    document.getElementById('friendsEditor').value = d.friends.join('\n'); } catch(e) {}
+}
+async function saveFriends() {
+  const msg = document.getElementById('friendsMsg');
+  const names = document.getElementById('friendsEditor').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  try {
+    const r = await fetch('/api/friends', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({friends:names})});
+    const d = await r.json();
+    msg.textContent = `✓ 已保存 ${d.count} 个好友`; msg.className = 'msg success';
+  } catch(e) { msg.textContent = '✗ 保存失败'; msg.className = 'msg error'; }
+}
+
+// ============================================================
+// History
+// ============================================================
+async function loadHistoryUsers() {
+  try {
+    const r = await fetch('/api/history/users'); const d = await r.json();
+    const filter = document.getElementById('userFilter'); filter.innerHTML = '';
+    d.users.forEach(u => {
+      const btn = document.createElement('button'); btn.textContent = u;
+      btn.addEventListener('click', () => {
+        filter.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active'); loadHistory(u);
+      });
+      filter.appendChild(btn);
+    });
+    if (d.users.length===0) filter.innerHTML='<span style="color:var(--dark-text-secondary);font-size:13px">暂无记录</span>';
+  } catch(e) {}
+}
+async function loadHistory(userId) {
+  try {
+    const r = await fetch(`/api/history/${encodeURIComponent(userId)}?limit=50`); const d = await r.json();
+    const list = document.getElementById('historyList');
+    if (!d.records.length) { list.innerHTML='<div style="padding:20px;color:var(--dark-text-secondary);text-align:center">暂无记录</div>'; return; }
+    list.innerHTML = d.records.map(rec => `
+      <div class="list-item">
+        <div class="meta"><span style="color:${rec.role==='user'?'var(--accent)':'var(--blue)'}">${rec.role==='user'?'📩 用户':'🤖 AI'}</span></div>
+        <div>${escapeHtml(rec.content)}</div>
+      </div>`).join('');
+  } catch(e) {}
+}
+
+// ============================================================
+// Skills
+// ============================================================
+let skills = [], currentSkill = null;
+
+async function loadSkills() {
+  try { const r = await fetch('/api/skills'); const d = await r.json(); skills = d.skills||[]; renderSkillList(); } catch(e) {}
+}
+function renderSkillList() {
+  const list = document.getElementById('skillList'); list.innerHTML = '';
+  skills.forEach(s => {
+    const div = document.createElement('div'); div.className = 'skill-item';
+    if (currentSkill && currentSkill.name === s.name) div.classList.add('active');
+    div.innerHTML = `<span>${escapeHtml(s.name)}</span><button class="del-btn" title="删除">×</button>`;
+    div.querySelector('span').addEventListener('click', ()=>selectSkill(s));
+    div.querySelector('.del-btn').addEventListener('click', e=>{ e.stopPropagation(); deleteSkillConfirm(s.name); });
+    list.appendChild(div);
+  });
+  if (skills.length===0) list.innerHTML='<div style="padding:20px;color:var(--dark-text-secondary);text-align:center;font-size:12px">暂无技能</div>';
+}
+function selectSkill(s) {
+  currentSkill = s; document.getElementById('skillEditor').style.display='flex';
+  document.getElementById('skillName').value = s.name; document.getElementById('skillContent').value = s.content;
+  document.getElementById('skillMsg').textContent = ''; renderSkillList();
+}
+function createSkill() {
+  currentSkill = null; document.getElementById('skillEditor').style.display='flex';
+  document.getElementById('skillName').value=''; document.getElementById('skillContent').value='';
+  document.getElementById('skillMsg').textContent=''; renderSkillList();
+}
+async function saveSkill() {
+  const name = document.getElementById('skillName').value.trim();
+  const content = document.getElementById('skillContent').value;
+  const msg = document.getElementById('skillMsg');
+  if (!name) { msg.textContent='请输入技能名称'; msg.className='msg error'; return; }
+  if (!content.trim()) { msg.textContent='内容不能为空'; msg.className='msg error'; return; }
+  try {
+    const r = await fetch(`/api/skills/${encodeURIComponent(name)}`, {
+      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({content})
+    });
+    const d = await r.json();
+    if (d.ok) {
+      msg.textContent=`✓ 已保存: ${d.name}`; msg.className='msg success';
+      currentSkill={name:d.name,content}; document.getElementById('skillName').value=d.name;
+      await loadSkills(); selectSkill(currentSkill);
+    } else throw new Error(d.error||'保存失败');
+  } catch(e) { msg.textContent='✗ '+e.message; msg.className='msg error'; }
+}
+async function deleteSkillConfirm(name) {
+  if (!await modalConfirm(`确定要删除技能 "${name}" 吗？`)) return;
+  try {
+    const r = await fetch(`/api/skills/${encodeURIComponent(name)}`, {method:'DELETE'});
+    const d = await r.json();
+    if (d.ok) {
+      if (currentSkill && currentSkill.name===name) { currentSkill=null; document.getElementById('skillEditor').style.display='none'; }
+      await loadSkills();
+    }
+  } catch(e) {}
+}
+function deleteSkill() { if (currentSkill) deleteSkillConfirm(currentSkill.name); }
+async function reloadSkills() {
+  try {
+    const r = await fetch('/api/skills/reload', {method:'POST'}); const d = await r.json();
+    if (d.ok) { const msg=document.getElementById('skillMsg'); msg.textContent='✓ 技能已重新加载到 AI'; msg.className='msg success'; }
+  } catch(e) {}
+}
+
+// ============================================================
+// Init
+// ============================================================
+connectLogStream();
+setInterval(pollStatus, 2000);
+pollStatus();
+loadConfig();
+</script>
+</body>
+</html>
