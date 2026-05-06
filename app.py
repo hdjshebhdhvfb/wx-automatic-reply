@@ -4,8 +4,9 @@ DeepSeek 微信自动回复系统 v2.0
 
 用法:
   1. 编辑 names.txt，每行写一个好友名字
-  2. 确保 Ollama 运行中: ollama serve
-  3. 运行: python app.py
+  2. 本地模式: 确保 Ollama 运行中 → ollama serve
+  3. 云端模式: 在 config.py 中配置 API_KEY
+  4. 运行: python app.py → 选择模式 1(本地) 或 2(云端API)
 
 消息读取策略（自动选择）:
   剪贴板模式 (默认) → 选中最后消息 → Ctrl+C → 读剪贴板
@@ -111,22 +112,20 @@ def process_message(bot: WeChatBot, contact_name: str, content: str,
     if not content or not content.strip():
         return
 
-    # 用 chat_to_open 作为显示名（群聊时显示群名+发送者）
     display_sender = f"{chat_to_open}→{contact_name}" if chat_to_open and chat_to_open != contact_name else contact_name
 
     print(f"\n{'─' * 55}")
     print(f"  📩 [{now}] 收到 | {display_sender}")
     print(f"     消息: {content}")
-    print(f"  🤖 正在生成回复...")
+    print(f"  🤖 正在生成回复 ({ai.get_model_display()})...")
 
     try:
         reply = ai.chat(contact_name, content)
 
-        # 群聊时加 @前缀
         if reply_prefix and not reply.startswith(reply_prefix.strip()):
             reply = f"{reply_prefix}{reply}"
 
-        print(f"  ✅ [{now}] AI 生成回复:")
+        print(f"  ✅ [{now}] AI 生成回复 ({ai.get_model_display()}):")
         print(f"     回复: {reply}")
 
         if config.REPLY_DELAY > 0:
@@ -172,7 +171,7 @@ def main_loop_sse(bot: WeChatBot, listen_names: list):
 
     print("\n" + "=" * 60)
     print(f"✅ 系统启动成功")
-    print(f"🤖 模型: {config.MODEL_NAME}")
+    print(f"🤖 模型: {ai.get_model_display()}")
     print(f"👥 监听: {', '.join(listen_names)}")
     print(f"📡 消息来源: WeFlow SSE 推送")
     print(f"💡 按 Ctrl+C 安全退出")
@@ -255,7 +254,7 @@ def main_loop(bot: WeChatBot, listen_names: list):
 
     print("\n" + "=" * 60)
     print(f"✅ 系统启动成功")
-    print(f"🤖 模型: {config.MODEL_NAME}")
+    print(f"🤖 模型: {ai.get_model_display()}")
     print(f"👥 监听: {', '.join(listen_names)}")
     print(f"⏱️  间隔: {config.POLL_INTERVAL}s")
     # 显示当前启用的读取方式
@@ -318,6 +317,90 @@ def main_loop(bot: WeChatBot, listen_names: list):
 # 入口
 # ============================================================
 
+def choose_api_preset():
+    """选项2的子菜单：选择预设厂商或自定义"""
+    presets = config.API_PRESETS
+
+    print()
+    print("  ──────────────────────────────────")
+    print("    预设厂商 (只需输入 API Key):")
+    for i, (key, info) in enumerate(presets.items(), 1):
+        print(f"      [{i}] {info['name']}  ({info['model']})")
+    print(f"      [{len(presets)+1}] 自定义 (手动填写地址和模型)")
+    print("  ──────────────────────────────────")
+
+    while True:
+        choice = input("  请选择 (1-{0}): ".format(len(presets)+1)).strip()
+
+        # 自定义
+        if choice == str(len(presets) + 1):
+            print()
+            api_key = input("    API Key: ").strip()
+            api_url = input(f"    API 地址 [{config.API_BASE_URL}]: ").strip()
+            api_model = input(f"    模型名称 [{config.API_MODEL_NAME}]: ").strip()
+
+            if not api_key:
+                print("  ❌ API Key 不能为空\n")
+                continue
+
+            ai.set_mode(
+                'api',
+                api_key=api_key,
+                api_base_url=api_url or None,
+                api_model=api_model or None,
+            )
+            print(f"  ✅ 已选择: {ai.get_model_display()}")
+            return
+
+        # 预设
+        try:
+            idx = int(choice) - 1
+            if 0 <= idx < len(presets):
+                preset_key = list(presets.keys())[idx]
+                preset = presets[preset_key]
+                print()
+                api_key = input(f"    {preset['name']} API Key: ").strip()
+
+                if not api_key:
+                    print("  ❌ API Key 不能为空\n")
+                    continue
+
+                ai.set_mode(
+                    'api',
+                    api_key=api_key,
+                    api_base_url=preset['base_url'],
+                    api_model=preset['model'],
+                )
+                print(f"  ✅ 已选择: {ai.get_model_display()}")
+                return
+        except (ValueError, IndexError):
+            pass
+
+        print("  ⚠️  请输入有效选项")
+
+
+def choose_ai_mode():
+    """启动时选择 AI 模式：1=本地 Ollama  2=云端 API"""
+    print()
+    print("─" * 40)
+    print("  请选择 AI 回复模式:")
+    print("    [1] 本地模型 (Ollama)")
+    print("    [2] 云端 API (预设/自定义)")
+    print("─" * 40)
+
+    while True:
+        choice = input("  请输入选项 (1/2): ").strip()
+        if choice == '1':
+            ai.set_mode('local')
+            print(f"  ✅ 已选择: {ai.get_model_display()}")
+            break
+        elif choice == '2':
+            choose_api_preset()
+            break
+        else:
+            print("  ⚠️  请输入 1 或 2")
+
+
 def main():
     print("=" * 60)
     print("🚀  DeepSeek 微信自动回复系统 v2.0")
@@ -336,26 +419,26 @@ def main():
         input("\n按回车键退出...")
         sys.exit(1)
 
-    # 3. 注册 AI 用户
+    # 3. 选择 AI 模式（本地 / 云端 API）
+    choose_ai_mode()
+
+    # 4. 注册 AI 用户
     for name in names:
         ai.add_user(name)
 
-    # 4. SSE 模式：不需要微信窗口操作，直接监听推送即可
+    # 5. SSE 模式：不需要微信窗口操作，直接监听推送即可
     if config.WEFLOW_SSE_ENABLED:
         print(f"\n📡 SSE 模式已启用")
         print(f"   推送地址: {config.WEFLOW_SSE_URL}")
 
-        # 尝试连接微信（用于发送回复）
         bot = init_wechat()
-
-        # 启动 SSE 主循环
         main_loop_sse(bot, names)
         return
 
-    # 5. 传统模式：连接微信 → 轮询消息
+    # 6. 传统模式：连接微信 → 轮询消息
     bot = init_wechat()
 
-    # 6. 主循环
+    # 7. 主循环
     main_loop(bot, names)
 
 

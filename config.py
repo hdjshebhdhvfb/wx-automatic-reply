@@ -19,13 +19,13 @@ USE_OCR_FALLBACK = True         # OCR 模式 — 截图→OCR 识别
 POLL_INTERVAL = 1.0
 
 # ============================================================
-# AI 模型设置
+# AI 模型设置（本地 Ollama）
 # ============================================================
 
 # Ollama 服务地址
 OLLAMA_BASE_URL = 'http://localhost:11434/v1/'
 
-# 模型名称 (运行 `ollama list` 查看可用模型)
+# 本地模型名称 (运行 `ollama list` 查看可用模型)
 # 推荐: deepseek-r1:7b / deepseek-r1:14b / qwen2.5:7b
 MODEL_NAME = 'deepseek-r1:7b'
 
@@ -37,6 +37,50 @@ MAX_TOKENS = 300
 
 # 每个会话保留的历史消息轮数
 MAX_HISTORY_ROUNDS = 15
+
+# ============================================================
+# 云端 API 设置（启动时选项2）
+# ============================================================
+
+# API Key（支持各大厂商的 OpenAI 兼容 API）
+# DeepSeek: https://platform.deepseek.com/api_keys
+# OpenAI:   https://platform.openai.com/api-keys
+# 豆包:     https://console.volcengine.com/ark
+API_KEY = ''
+
+# API 地址（OpenAI 兼容格式，尾部带 /v1/）
+# DeepSeek: https://api.deepseek.com/v1/
+# OpenAI:   https://api.openai.com/v1/
+# 豆包:     https://ark.cn-beijing.volces.com/api/v3/
+API_BASE_URL = 'https://api.deepseek.com/v1/'
+
+# 云端模型名称
+# DeepSeek: deepseek-chat / deepseek-reasoner
+# OpenAI:   gpt-4o / gpt-4o-mini
+# 豆包:     对应 endpoint ID
+API_MODEL_NAME = 'deepseek-chat'
+
+# ============================================================
+# 预设 API 厂商（启动时选项2 → 预设模型）
+# ============================================================
+
+API_PRESETS = {
+    'deepseek': {
+        'name': 'DeepSeek',
+        'base_url': 'https://api.deepseek.com/v1/',
+        'model': 'deepseek-chat',
+    },
+    'doubao': {
+        'name': '豆包 (字节跳动)',
+        'base_url': 'https://ark.cn-beijing.volces.com/api/v3/',
+        'model': 'doubao-pro-32k',
+    },
+    'zhipu': {
+        'name': '智谱 AI (GLM)',
+        'base_url': 'https://open.bigmodel.cn/api/paas/v4/',
+        'model': 'glm-4-flash',
+    },
+}
 
 # ============================================================
 # 系统提示词 (可自定义 AI 回复风格)
