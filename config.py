@@ -69,3 +69,19 @@ LISTEN_MODE = 'specific'
 
 # 回复延迟 (秒) — 模拟人类打字，设为 0 则立即回复
 REPLY_DELAY = 0.5
+
+# ============================================================
+# WeFlow SSE 推送设置
+# ============================================================
+
+# 启用 WeFlow SSE 消息推送（替代屏幕截取/OCR 方案）
+WEFLOW_SSE_ENABLED = True
+
+# WeFlow HTTP API 基础地址
+WEFLOW_BASE_URL = 'http://127.0.0.1:5031'
+
+# API Access Token
+WEFLOW_ACCESS_TOKEN = '53e54f9ad19bc1af50649fcb15026e9f'
+
+# SSE 推送地址（接收实时消息推送）
+WEFLOW_SSE_URL = f'{WEFLOW_BASE_URL}/api/v1/push/messages?access_token={WEFLOW_ACCESS_TOKEN}'
