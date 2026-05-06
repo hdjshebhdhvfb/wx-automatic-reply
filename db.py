@@ -4,9 +4,17 @@ SQLite 对话历史持久化模块
 
 import sqlite3
 import os
+import sys
 from datetime import datetime
 
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'chat_history.db')
+
+def _base_dir() -> str:
+    if getattr(sys, 'frozen', False):
+        return os.path.dirname(sys.executable)
+    return os.path.dirname(os.path.abspath(__file__))
+
+
+DB_PATH = os.path.join(_base_dir(), 'chat_history.db')
 
 
 def create_db():

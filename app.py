@@ -18,7 +18,15 @@ import sys
 import os
 from datetime import datetime
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+def _base_dir() -> str:
+    """返回程序所在目录（兼容 PyInstaller 打包和源码运行）"""
+    if getattr(sys, 'frozen', False):
+        return os.path.dirname(sys.executable)
+    return os.path.dirname(os.path.abspath(__file__))
+
+
+sys.path.insert(0, _base_dir())
 
 import config
 import db
@@ -33,7 +41,7 @@ from sse_client import SSEClient
 
 def load_names() -> list:
     """加载 names.txt 中的好友列表"""
-    file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), config.NAMES_FILE)
+    file_path = os.path.join(_base_dir(), config.NAMES_FILE)
 
     if not os.path.exists(file_path):
         print(f"\n⚠️  配置文件不存在: {file_path}")

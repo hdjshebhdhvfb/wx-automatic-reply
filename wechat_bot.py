@@ -14,8 +14,15 @@
 import time
 import re
 import os
+import sys
 import hashlib
 from typing import Optional, List, Dict
+
+
+def _base_dir() -> str:
+    if getattr(sys, 'frozen', False):
+        return os.path.dirname(sys.executable)
+    return os.path.dirname(os.path.abspath(__file__))
 
 # ---- 窗口检测 ----
 import uiautomation as auto
@@ -627,7 +634,7 @@ def diagnose():
         print("   ⚠️  UIA 无法读取联系人列表")
 
     # 3. UI 树
-    out_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'wechat_ui_tree.txt')
+    out_path = os.path.join(_base_dir(), 'wechat_ui_tree.txt')
     print(f"\n[3/3] 导出 UI 控件树 → {out_path}")
     bot.dump_ui_tree(max_depth=5, output_file=out_path)
 
