@@ -42,7 +42,7 @@
 
 ```bash   ”“bash   “bash”;“bash```bash   ”“bash   “bash”;“bash```bash   ”“bash   “bash”;“bash```bash   ”“bash   “bash”;“bash```bash   ”“bash   “bash”;“bash```bash   ”“bash   “bash”;“bash```bash   ”“bash   “bash”;“bash```bash   ”“bash   “bash”;“bash```bash   ”“bash   “bash”;“bashbash "bash";"bash"```bash   ”“bash   “bash”;“bash```bash   ”“bash   “bash”;“bashbash "bash";"bash"```bash   ”“bash   “bash”;“bash```bash   ”“bash   “bash”;“bashbash "bash";"bash"```bash   ”“bash   “bash”;“bash```bash   ”“bash   “bash”;“bashbash "bash";"bash"```bash   ”“bash   “bash”;“bash
 # 1. 克隆仓库
-git clone <your-repo-url>git 克隆 <你的仓库网址>git clone < your-repo-url> git clone git clone < your-repo-url> git clone  git clone < your-repo-url> git clonegit clone <your-repo-url>git 克隆 <你的仓库网址>git clone < your-repo-url> git clone git clone < your-repo-url> git clone  git clone < your-repo-url> git clonegit clone <your-repo-url>git 克隆 <你的仓库网址>git clone < your-repo-url> git clone git clone < your-repo-url> git clone  git clone < your-repo-url> git clonegit clone <your-repo-url>git 克隆 <你的仓库网址>git clone < your-repo-url> git clone git clone < your-repo-url> git clone  git clone < your-repo-url> git clone
+git clone <https://github.com/hdjshebhdhvfb/wx-automatic-reply>
 cd wx2
 
 # 2. 安装 Python 依赖
