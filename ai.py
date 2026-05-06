@@ -70,11 +70,19 @@ def _load_skills() -> str:
 
 SYSTEM_PROMPT = _load_skills()
 
-# OpenAI 兼容客户端（连接本地 Ollama）
-client = OpenAI(base_url=BASE_URL, api_key='ollama')
-
 # 会话内存: {user_name: [{"role": ..., "content": ...}, ...]}
 message_table: dict = {}
+
+# 动态客户端 — 由 app.py 在启动时通过 init_client() 注入
+client = None
+MODEL = None
+
+
+def init_client(_client, model_name: str):
+    """由 app.py 在模型选择完成后调用，注入 OpenAI 兼容客户端和模型名。"""
+    global client, MODEL
+    client = _client
+    MODEL = model_name
 
 
 def reload_skills():

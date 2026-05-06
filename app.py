@@ -33,6 +33,7 @@ import db
 import ai
 from wechat_bot import WeChatBot
 from sse_client import SSEClient
+from api_selector import select_model
 
 
 # ============================================================
@@ -175,7 +176,7 @@ def main_loop_sse(bot: WeChatBot, listen_names: list):
 
     print("\n" + "=" * 60)
     print(f"✅ 系统启动成功")
-    print(f"🤖 模型: {config.MODEL_NAME}")
+    print(f"🤖 模型: {ai.MODEL}")
     print(f"👥 监听: {', '.join(listen_names)}")
     print(f"📡 消息来源: WeFlow SSE 推送")
     print(f"💡 按 Ctrl+C 安全退出")
@@ -231,7 +232,11 @@ def main_loop_sse(bot: WeChatBot, listen_names: list):
                             'chat_to_open': chat_to_open,
                             'reply_prefix': reply_prefix,
                         }
-                    pending[ai_user]['msgs'].append((now, content))
+                        now_str = datetime.fromtimestamp(now).strftime("%H:%M:%S")
+                        print(f"\n  ⏳ [{now_str}] 收到 [{ai_user}] 的消息，等待 {config.MESSAGE_MERGE_DELAY}s 缓冲合并...")
+                    else:
+                        count = len(pending[ai_user]['msgs']) + 1
+                        print(f"      [{ai_user}] 缓冲中 ({count} 条消息)")
 
             # ---- 处理到期的缓冲区（最早消息已等待 >= MESSAGE_MERGE_DELAY 秒） ----
             to_process = []
@@ -290,7 +295,7 @@ def main_loop(bot: WeChatBot, listen_names: list):
 
     print("\n" + "=" * 60)
     print(f"✅ 系统启动成功")
-    print(f"🤖 模型: {config.MODEL_NAME}")
+    print(f"🤖 模型: {ai.MODEL}")
     print(f"👥 监听: {', '.join(listen_names)}")
     print(f"⏱️  间隔: {config.POLL_INTERVAL}s")
     # 显示当前启用的读取方式
@@ -336,7 +341,11 @@ def main_loop(bot: WeChatBot, listen_names: list):
                 # 放入缓冲区
                 if name not in pending:
                     pending[name] = {'msgs': [], 'chat_to_open': name, 'reply_prefix': ''}
-                pending[name]['msgs'].append((now, content))
+                    now_str = datetime.fromtimestamp(now).strftime("%H:%M:%S")
+                    print(f"\n  ⏳ [{now_str}] 收到 [{name}] 的消息，等待 {config.MESSAGE_MERGE_DELAY}s 缓冲合并...")
+                else:
+                    count = len(pending[name]['msgs']) + 1
+                    print(f"      [{name}] 缓冲中 ({count} 条消息)")
 
             # ---- 处理到期的缓冲区 ----
             to_process = []
@@ -396,6 +405,10 @@ def main():
     # 3. 注册 AI 用户
     for name in names:
         ai.add_user(name)
+
+    # 3.5 模型选择
+    _client, model_name = select_model()
+    ai.init_client(_client, model_name)
 
     # 4. SSE 模式：不需要微信窗口操作，直接监听推送即可
     if config.WEFLOW_SSE_ENABLED:
