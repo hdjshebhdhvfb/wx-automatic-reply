@@ -1,4 +1,4 @@
-# DeepSeek 微信自动回复系统 v2.0   # DeepSeek WeChat Auto-Reply System v2.0
+# DeepSeek 微信自动回复系统 v2.0   # DeepSeek WeChat Auto-Reply System v2.0DeepSeek 微信自动回复系统 v2.0  # DeepSeek WeChat Auto-Reply System Version 2.0DeepSeek 微信自动回复系统 v2.0  # DeepSeek WeChat Auto-Reply System Version 2.0DeepSeek WeChat Auto-Reply System v2.0  # DeepSeek WeChat Auto-Reply System Version 2.0DeepSeek WeChat Auto-Reply System v2.0  # DeepSeek WeChat Auto-Reply System Version 2.0
 
 基于 **WeFlow** 和 **Ollama** 的微信 AI 自动回复机器人。通过 WeFlow SSE 实时推送接收微信消息，调用 Ollama 本地部署的 DeepSeek 模型生成回复，再通过 Windows UI 自动化将回复发送回微信。
 
@@ -6,24 +6,24 @@
 
 | 项目 | 要求 |
 |------|------|
-| 操作系统 | Windows 10 / 11 (64-bit) || Operating System | Windows 10 / 11 (64-bit) |
+| 操作系统 | Windows 10 / 11 (64-bit) || Operating System | Windows 10 / 11 (64-bit) || 操作系统 | Windows 10 / 11（64 位） || 操作系统 | Windows 10 / 11（64 位） || Operating System | Windows 10 / 11 (64-bit) |Operating System | Windows 10 / 11 (64-bit)
 | 微信版本 | 微信 PC 版 4.1.9.30 及以上 |
-| Python | 3.9+ |   | Python | 3.9 |
+| Python | 3.9+ |   | Python | 3.9 || Python | 3.9  |   | Python | 3.9 || Python | 3.9 | | Python | 3.9 || Python | 3.9 | | Python | 3.9 || Python | 3.9 | | Python | 3.9 | | Python | 3.9 | | Python | 3.9 | | Python | 3.9 | | Python | 3.9 | | Python | 3.9 |
 | Ollama | 最新版，用于本地运行 DeepSeek 模型 || Ollama | The latest version, for running DeepSeek models locally |
-| WeFlow | 需运行在本地，提供 SSE 消息推送和 HTTP API || WeFlow | Needs to run locally, providing SSE message push and HTTP API |
+| WeFlow | 需运行在本地，提供 SSE 消息推送和 HTTP API || WeFlow | Needs to run locally, providing SSE message push and HTTP API || WeFlow | 需运行在本地，提供 SSE 消息推送和 HTTP API || WeFlow | Needs to run locally， providing SSE message push and HTTP API |WeFlow | Needs to run locally, providing SSE message push and HTTP API |WeFlow | Needs to run locally, providing SSE message push and HTTP API |
 
 ### Ollama 要求
 
-- 下载安装 [Ollama](https://ollama.com/download)Download and install [Ollama](https://ollama.com/download)
-- 拉取推荐模型：`ollama pull deepseek-r1:7b`Pull the recommendation model: `ollama pull deepseek-r1:7bollama 拉取 deepseek-r1:7b`
-- 也支持其他兼容 OpenAI API 的模型（如 qwen2.5:7b、deepseek-r1:14b）It also supports other models compatible with the OpenAI API (such as qwen2.5:7b, deepseek-r1:14b).
-- 确保 Ollama 服务正在运行（默认监听 `localhost:11434`）Make sure the Ollama service is running (default listening on `localhost:11434`).
+- 下载安装 [Ollama](https://ollama.com/download)Download and install [Ollama](https://ollama.com/download)Download and install [Ollama](https://ollama.com/download)Download and install [Ollama](https://ollama.com/download)下载并安装 [Ollama](https://ollama.com/download)
+- 拉取推荐模型：`ollama pull deepseek-r1:7b`Pull the recommendation model: `ollama pull deepseek-r1:7bollama 拉取 deepseek-r1:7b`Pull the recommendation model: `ollama pull deepseek-r1:7bollama 拉取 deepseek-r1:7b`Pull the recommendation model: `ollama pull deepseek-r1:7bollama 拉取 deepseek-r1:7b`拉取推荐模型：`ollama pull deepseek-r1:7bollama 拉取 deepseek-r1:7b`
+- 也支持其他兼容 OpenAI API 的模型（如 qwen2.5:7b、deepseek-r1:14b）It also supports other models compatible with the OpenAI API (such as qwen2.5:7b, deepseek-r1:14b).It also supports other models compatible with the OpenAI API (such as qwen2.5:7b, deepseek-r1:14b).它还支持其他与 OpenAI API 兼容的模型（例如 qwen2.5：7b、deepseek-r1:14b）。
+- 确保 Ollama 服务正在运行（默认监听 `localhost:11434`）Make sure the Ollama service is running (default listening on `localhost:11434`).Make sure the Ollama service is running (default listening on `localhost:11434`).确保 Ollama 服务正在运行（默认监听 `localhost:11434`）。
 
 ### WeFlow 要求
 
 - WeFlow 需运行在本地，提供微信消息实时推送能力
-- 默认 SSE 推送地址：`http://127.0.0.1:5031/api/v1/push/messages`Default SSE push address: `http://127.0.0.1:5031/api/v1/push/messages`
-- 需在 `config.py` 中配置正确的 Access TokenThe correct Access Token needs to be configured in `config.py`.
+- 默认 SSE 推送地址：`http://127.0.0.1:5031/api/v1/push/messages`Default SSE push address: `http://127.0.0.1:5031/api/v1/push/messages`Default SSE push address: `http://127.0.0.1:5031/api/v1/push/messages`Default SSE push address: `http://127.0.0.1:5031/api/v1/push/messages`
+- 需在 `config.py` 中配置正确的 Access TokenThe correct Access Token needs to be configured in `config.py`.The correct Access Token needs to be configured in `config.py`.需要在 `config.py` 中配置正确的访问令牌。
 
 ## 依赖
 
@@ -31,44 +31,56 @@
 
 | 包 | 用途 |
 |------|------|
-| `openai >= 1.0.0   Openai >= 1.0.0` | 调用 Ollama API（OpenAI 兼容端点） || `openai > = 1.0.0 | Call Ollama API (OpenAI-compatible endpoint) || `openai >= 1.0.0   Openai >= 1.0.0` | 调用 Ollama API（OpenAI 兼容端点） || `openai > = 1.0.0 | Call Ollama API (OpenAI-compatible endpoint) |
-| `uiautomation >= 2.0.0` | Windows UI 自动化，检测微信窗口和控件 || `uiautomation > = 2.0.0 | Windows UI Automation, detect WeChat windows and controls || `uiautomation > = 2.0.0` | Windows UI 自动化，检测微信窗口和控件 || `uiautomation >= 2.0.0 | Windows UI Automation, detect WeChat windows and controls |
-| `pyperclip >= 1.8.0` | 系统剪贴板读写 || `pyperclip > = 1.8.0 | System Clipboard Read/Write || `pyperclip > = 1.8.0` | System Clipboard Read/Write || `pyperclip >= 1.8.0 | System Clipboard Read/Write |
+| `openai >= 1.0.0   Openai >= 1.0.0` | 调用 Ollama API（OpenAI 兼容端点） || `openai > = 1.0.0 | Call Ollama API (OpenAI-compatible endpoint) || `openai >= 1.0.0   Openai >= 1.0.0` | 调用 Ollama API（OpenAI 兼容端点） || `openai > = 1.0.0 | Call Ollama API (OpenAI-compatible endpoint) || `openai >= 1.0.0   Openai >= 1.0.0openai >= 1.0.0   Openai >= 1.0.0` | 调用 Ollama API（OpenAI 兼容端点） || `openai > = 1.0.0 | Call Ollama API (OpenAI-compatible endpoint) || `openai >= 1.0.0   Openai >= 1.0.0openai >= 1.0.0   Openai >= 1.0.0` | 调用 Ollama API（OpenAI 兼容端点） || `openai > = 1.0.0 | Call Ollama API (OpenAI-compatible endpoint) |
+| `uiautomation >= 2.0.0` | Windows UI 自动化，检测微信窗口和控件 || `uiautomation > = 2.0.0 | Windows UI Automation, detect WeChat windows and controls || `uiautomation > = 2.0.0` | Windows UI 自动化，检测微信窗口和控件 || `uiautomation >= 2.0.0 | Windows UI Automation, detect WeChat windows and controls || `uiautomation >    uiautomation >`uiautomation >= 2.0.0` | Windows UI Automation, detect WeChat windows and controls| `uiautomation > = 2.0.0   uiautomation > = 2.0.0` | Windows UI 自动化，检测微信窗口和控件 || `uiautomation >= 2.0.0 | Windows UI Automation, detect WeChat windows and controls || `uiautomation >= 2.0.0` | Windows UI 自动化，检测微信窗口和控件 || `uiautomation >= 2.0.0 | Windows UI Automation， detect WeChat windows and controls || `uiautomation >= uiautomation > uiautomation >= uiautomation >`uiautomation > = 2.0.0 | Windows UI Automation, detect WeChat windows and controls
+| `pyperclip >= 1.8.0` | 系统剪贴板读写 || `pyperclip > = 1.8.0 | System Clipboard Read/Write || `pyperclip > = 1.8.0` | System Clipboard Read/Write || `pyperclip >= 1.8.0 | System Clipboard Read/Write |`pyperclip >= 1.8.0   pyperclip >= 1.8.0` | 系统剪贴板读写`pyperclip >= 1.8.0   pyperclip >= 1.8.0` | 系统剪贴板读写
 | `pyautogui >= 0.9.0` | 截图、鼠标移动和键盘模拟 |
-| `numpy >= 1.24.0` | 数值计算（OCR 所需） || `numpy > = 1.24.0 | Numerical Computation (Required for OCR) || `numpy >= 1.24.0` | 数值计算（OCR 所需） || `numpy >= 1.24.0 | 数值计算（OCR 所需） |
+| `numpy >= 1.24.0   Numpy >= 1.24.0。` | 数值计算（OCR 所需） || `numpy > = 1.24.0 | Numerical Computation (Required for OCR) || `numpy >= 1.24.0   Numpy >= 1.24.0。` | 数值计算（OCR 所需） || `numpy >= 1.24.0 | 数值计算（OCR 所需） || `numpy >    numpy >“傻瓜”。`numpy >= 1.24.0` | Numerical Computation (Required for OCR)| `numpy >    numpy >“傻瓜”。`numpy >= 1.24.0` | Numerical Computation (Required for OCR) numpy > `numpy > = 1.24.0 | Numerical Computation (Required for OCR)`numpy >= 1.24.0   Numpy >= 1.24.0。` | 数值计算（OCR 所需）
 
 
 ## 安装步骤
 
-```bash   ”“bash
+```bash   ”“bash   “bash”;“bash```bash   ”“bash   “bash”;“bash```bash   ”“bash   “bash”;“bash```bash   ”“bash   “bash”;“bash```bash   ”“bash   “bash”;“bash```bash   ”“bash   “bash”;“bash```bash   ”“bash   “bash”;“bash```bash   ”“bash   “bash”;“bash```bash   ”“bash   “bash”;“bashbash "bash";"bash"```bash   ”“bash   “bash”;“bash```bash   ”“bash   “bash”;“bashbash "bash";"bash"```bash   ”“bash   “bash”;“bash```bash   ”“bash   “bash”;“bashbash "bash";"bash"```bash   ”“bash   “bash”;“bash```bash   ”“bash   “bash”;“bashbash "bash";"bash"```bash   ”“bash   “bash”;“bash
 # 1. 克隆仓库
-git clone <your-repo-url>git 克隆 <你的仓库网址>
+git clone <your-repo-url>git 克隆 <你的仓库网址>git clone < your-repo-url> git clone git clone < your-repo-url> git clone  git clone < your-repo-url> git clonegit clone <your-repo-url>git 克隆 <你的仓库网址>git clone < your-repo-url> git clone git clone < your-repo-url> git clone  git clone < your-repo-url> git clonegit clone <your-repo-url>git 克隆 <你的仓库网址>git clone < your-repo-url> git clone git clone < your-repo-url> git clone  git clone < your-repo-url> git clonegit clone <your-repo-url>git 克隆 <你的仓库网址>git clone < your-repo-url> git clone git clone < your-repo-url> git clone  git clone < your-repo-url> git clone
 cd wx2
 
 # 2. 安装 Python 依赖
-pip install -r requirements.txt
+pip install -r requirements.txt运行 `pip install -r requirements.txt` 安装依赖包。Run `pip install -r requirements.txt运行 `pip install -r requirements.txt` 安装依赖包。` to install the dependencies.Run `pip install -r requirements.txt运行 `pip install -r requirements.txt` 安装依赖包。` to install the dependencies. Run `pip install -r requirements.txt运行 `pip install -r requirements.txt` 安装依赖包。` to install the dependencies. ` to install the dependencies.运行 `pip install -r requirements.txt` 安装依赖包。
 
 # 3. 安装 Ollama 并拉取模型
-ollama pull deepseek-r1:7bollama 拉取 deepseek-r1:7b
+ollama pull deepseek-r1:7bollama 拉取 deepseek-r1:7bollama 拉取 deepseek-r1:7bollama pull deepseek-r1:7bollama pull deepseek-r1:7bollama pull deepseek-r1:7b
 
 # 4. （可选）安装 OCR 支持，提升消息读取准确性
-pip install easyocr
+pip install easyocr   PIP安装easyocrTo install easyocr using PIP, run the following command:使用 PIP 安装 easyocr，请运行以下命令：To install easyocr using PIP, run the following command:
+
+```
+pip install easyocr   PIP安装easyocr
+```
+
+```
+pip install easyocr   PIP安装easyocr
+```
+
+```
+pip install easyocr   PIP安装easyocr
+```
 ```
 
 ### 验证安装
 
-```bash   ”“bash
+```bash   ”“bash   “bash”;“bash```bash   ”“bash   “bash”;“bash
 # 验证 Python 依赖
-python -c "import openai; import uiautomation; import pyautogui; import PIL; print('✅ 依赖正常')"
+python -c "import openai; import uiautomation; import pyautogui; import PIL; print('✅ 依赖正常')"python -c "import openai; import uiautomation; import pyautogui; import PIL; print('✅ 依赖正常')"python -c "import openai; import uiautomation; import pyautogui; import PIL; print('✅ 依赖正常')"python -c "import openai; import uiautomation; import pyautogui; import PIL; print('✅ 依赖正常')"
 
 # 验证 Ollama 模型
 ollama list
 
 # 验证 Ollama API
-curl http://localhost:11434/api/tags
+curl http://localhost:11434/api/tags使用 curl 命令访问本地主机 11434 端口上的 /api/tags 接口：`curl http://localhost：
 
 # 验证微信连接（需微信已登录且窗口打开）
-python wechat_bot.py
+python wechat_bot.py   运行 Python 脚本 wechat_bot.py
 ```
 
 ## 功能说明
@@ -99,7 +111,7 @@ python wechat_bot.py
 
 编辑 `config.py` 按需调整：
 
-- `MODEL_NAME` — AI 模型名称（默认 `deepseek-r1:7b`）
+- `MODEL_NAME` — AI 模型名称（默认 `deepseek-r1:7b`）- `MODEL_NAME` — AI model name (default `deepseek-r1:7b`)
 - `POLL_INTERVAL` — 传统模式轮询间隔（默认 1 秒）
 - `REPLY_DELAY` — 回复延迟（默认 0.5 秒，模拟真人）
 - `TEMPERATURE` — AI 回复创意度（0~1，默认 0.7）
@@ -121,10 +133,6 @@ python app.py
 
 # 5. 按 Ctrl+C 安全退出
 ```
-
-### 4. 使用打包好的 EXE
-
-下载 Release 中的 `wx2.exe`，将 `names.txt` 放在同一目录下，双击运行即可（无需安装 Python）。
 
 ## 架构设计
 
