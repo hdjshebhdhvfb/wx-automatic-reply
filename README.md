@@ -41,7 +41,7 @@
 
 ```bash
 # 1. 克隆仓库
-git clone <your-repo-url>
+git clone <https://github.com/hdjshebhdhvfb/wx-automatic-reply>
 cd wx2
 
 # 2. 安装 Python 依赖
