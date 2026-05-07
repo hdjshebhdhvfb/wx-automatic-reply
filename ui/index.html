@@ -235,6 +235,29 @@
     font-family: var(--font-mono); letter-spacing: 1px;
   }
 
+  /* Error alert */
+  .error-alert {
+    display: none;
+    backdrop-filter: var(--aero-blur);
+    background: rgba(255,71,87,.1);
+    border: 1px solid rgba(255,71,87,.3);
+    border-radius: var(--radius);
+    padding: 14px 20px; margin-bottom: 16px;
+    font-family: var(--font-mono); font-size: 13px;
+    color: var(--red);
+    animation: fadeIn .25s ease;
+  }
+  .error-alert.visible { display: flex; align-items: flex-start; gap: 10px; }
+  .error-alert .err-icon { font-size: 18px; flex-shrink: 0; }
+  .error-alert .err-text { flex: 1; line-height: 1.6; }
+  .error-alert .err-time { color: var(--dark-text-secondary); font-size: 11px; margin-top: 4px; }
+  .error-alert .err-close {
+    background: none; border: none; color: var(--red);
+    cursor: pointer; font-size: 16px; padding: 0 4px;
+    opacity: .6; transition: opacity .15s;
+  }
+  .error-alert .err-close:hover { opacity: 1; }
+
   /* ============================================================
      DASHBOARD STATUS CARDS
      ============================================================ */
@@ -637,6 +660,14 @@
         <div class="value" id="dashUptime">—</div>
       </div>
     </div>
+    <div class="error-alert" id="errorAlert">
+      <span class="err-icon">⚠</span>
+      <div class="err-text">
+        <div id="errorMsg">—</div>
+        <div class="err-time" id="errorTime"></div>
+      </div>
+      <button class="err-close" onclick="dismissError()">×</button>
+    </div>
     <div class="btn-row">
       <button class="btn primary" id="btnStart" onclick="startBot()">▶ 启动</button>
       <button class="btn danger" id="btnStop" onclick="stopBot()" disabled>■ 停止</button>
@@ -889,6 +920,13 @@ document.querySelectorAll('.nav-item[data-tab]').forEach(el => {
 });
 
 // ============================================================
+// Error alert
+// ============================================================
+function dismissError() {
+  document.getElementById('errorAlert').classList.remove('visible');
+}
+
+// ============================================================
 // Status polling
 // ============================================================
 async function pollStatus() {
@@ -927,6 +965,18 @@ function updateStatusUI(s) {
     dashState.textContent = s.error ? '错误' : '已停止';
     dashState.style.color = s.error ? 'var(--red)' : 'var(--dark-text-secondary)';
     btnStart.disabled = false; btnStop.disabled = true;
+  }
+
+  // Error alert
+  const errAlert = document.getElementById('errorAlert');
+  const errMsg = document.getElementById('errorMsg');
+  const errTime = document.getElementById('errorTime');
+  if (s.last_error) {
+    errAlert.classList.add('visible');
+    errMsg.textContent = s.last_error;
+    errTime.textContent = new Date().toLocaleTimeString();
+  } else if (!s.last_error) {
+    errAlert.classList.remove('visible');
   }
 
   dashModel.textContent = s.model || '—';

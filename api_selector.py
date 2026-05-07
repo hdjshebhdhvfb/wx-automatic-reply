@@ -17,7 +17,6 @@ def _base_dir() -> str:
 
 
 API_CONFIG_PATH = os.path.join(_base_dir(), 'api_config.json')
-LOCAL_CONFIG_PATH = os.path.join(_base_dir(), 'local_config.json')
 
 
 # ============================================================
@@ -124,8 +123,8 @@ def select_model() -> tuple:
 
 def _select_local(config) -> tuple:
     """本地 Ollama 模型选择流程"""
-    local_cfg = _load_json(LOCAL_CONFIG_PATH, {"model_name": ""})
-    saved = local_cfg.get('model_name', '')
+    cfg = _load_json(API_CONFIG_PATH, {"local_model_name": ""})
+    saved = cfg.get('local_model_name', '')
 
     # 有已保存配置 → 一键确认
     if saved:
@@ -156,8 +155,8 @@ def _select_local(config) -> tuple:
 
     model_name = _pick_model(models, saved, "可用本地模型")
 
-    local_cfg['model_name'] = model_name
-    _save_json(LOCAL_CONFIG_PATH, local_cfg)
+    cfg['local_model_name'] = model_name
+    _save_json(API_CONFIG_PATH, cfg)
 
     client = OpenAI(base_url=config.OLLAMA_BASE_URL, api_key='ollama')
     print(f"✅ 已选择本地模型: {model_name}")
@@ -170,6 +169,7 @@ def _select_api(config) -> tuple:
         "api_base_url": "https://api.deepseek.com/v1/",
         "api_key": "",
         "api_model_name": "",
+        "local_model_name": "",
     })
 
     # 有完整已保存配置 → 一键确认

@@ -27,7 +27,7 @@ OLLAMA_BASE_URL = 'http://localhost:11434/v1/'
 
 # 模型名称 (运行 `ollama list` 查看可用模型)
 # 推荐: deepseek-r1:7b / deepseek-r1:14b / qwen2.5:7b
-MODEL_NAME = 'deepseek-r1:7b'
+MODEL_NAME = ''
 
 # AI 回复温度 (0=精确, 1=随机, 建议 0.6~0.8)
 TEMPERATURE = 0.7

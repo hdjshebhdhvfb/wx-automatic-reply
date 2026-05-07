@@ -30,6 +30,7 @@ class SSEClient:
         self._thread: Optional[threading.Thread] = None
         self._seen_ids: set = set()
         self._max_seen = 10000
+        self.last_error = ""  # 最近一次连接错误，供 Web UI 读取
 
     # ----------------------------------------------------------------
     # 生命周期
@@ -82,15 +83,18 @@ class SSEClient:
                     },
                 )
                 with urllib.request.urlopen(req) as resp:
+                    self.last_error = ""
                     print(f"✅ SSE 已连接 → {self.url}")
                     self._parse_stream(resp)
             except urllib.error.URLError as e:
                 if self._running:
-                    print(f"⚠️  SSE 连接失败: {e}，5秒后重连...")
+                    self.last_error = f"SSE 连接失败: {e}"
+                    print(f"⚠️  {self.last_error}，5秒后重连...")
                     time.sleep(5)
             except Exception as e:
                 if self._running:
-                    print(f"⚠️  SSE 连接异常: {e}，5秒后重连...")
+                    self.last_error = f"SSE 连接异常: {e}"
+                    print(f"⚠️  {self.last_error}，5秒后重连...")
                     time.sleep(5)
 
     def _parse_stream(self, resp):

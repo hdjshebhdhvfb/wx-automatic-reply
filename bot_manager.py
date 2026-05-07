@@ -49,6 +49,7 @@ class BotManager:
         self._listeners: list = []
         self._start_time: datetime | None = None
         self._error_msg = ""
+        self._last_error = ""         # 最近一次异常信息，Web UI 仪表盘展示
         self._log_history: list = []  # 保留最近日志，新 SSE 客户端连接时回放
 
     # ----------------------------------------------------------------
@@ -66,6 +67,7 @@ class BotManager:
             "listeners": self._listeners,
             "uptime": int(uptime),
             "error": self._error_msg,
+            "last_error": self._last_error,
         }
 
     @property
@@ -84,6 +86,7 @@ class BotManager:
         self._stop_event.clear()
         self._state = "starting"
         self._error_msg = ""
+        self._last_error = ""
         self._listeners = listeners
         self._start_time = datetime.now()
 
@@ -206,6 +209,7 @@ class BotManager:
             pending = {}
 
             self._state = "running"
+            self._last_error = ""
             self._log(f"✅ 系统启动成功 (SSE 模式)")
             self._log(f"🤖 模型: {ai.MODEL}")
             self._log(f"👥 监听: {', '.join(self._listeners)}")
@@ -213,6 +217,11 @@ class BotManager:
             while not self._stop_event.is_set():
                 try:
                     msg = sse.get_message(timeout=1.0)
+                    # SSE 连接错误由 SSEClient 内部捕获，这里轮询读取
+                    if sse.last_error:
+                        self._last_error = sse.last_error
+                    elif self._last_error and self._last_error == sse.last_error:
+                        self._last_error = ""  # 错误已被 SSEClient 清除
                     now = time.time()
 
                     # ---- 收集消息到缓冲区 ----
@@ -285,6 +294,7 @@ class BotManager:
                 except Exception as e:
                     if self._stop_event.is_set():
                         break
+                    self._last_error = str(e)
                     self._log(f"⚠️ 主循环异常: {e} (缓冲数: {len(pending)})")
                     time.sleep(2)
 
@@ -340,6 +350,7 @@ class BotManager:
             pending = {}
 
             self._state = "running"
+            self._last_error = ""
             self._log(f"✅ 系统启动成功 (轮询模式)")
             self._log(f"🤖 模型: {ai.MODEL}")
             self._log(f"👥 监听: {', '.join(self._listeners)}")
@@ -348,6 +359,9 @@ class BotManager:
             while not self._stop_event.is_set():
                 try:
                     now = time.time()
+                    # 正常运行，清除旧错误
+                    if self._last_error:
+                        self._last_error = ""
 
                     for name in self._listeners:
                         if self._stop_event.is_set():
@@ -404,6 +418,7 @@ class BotManager:
                 except Exception as e:
                     if self._stop_event.is_set():
                         break
+                    self._last_error = str(e)
                     self._log(f"⚠️ 主循环异常: {e}")
                     time.sleep(2)
 

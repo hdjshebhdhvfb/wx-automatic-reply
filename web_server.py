@@ -27,7 +27,6 @@ from api_selector import (
     _load_json,
     _save_json,
     API_CONFIG_PATH,
-    LOCAL_CONFIG_PATH,
 )
 
 app = FastAPI(title="微信自动回复控制台")
@@ -100,20 +99,21 @@ async def log_stream():
 
 @app.get("/api/config")
 async def get_config():
-    local_cfg = _load_json(LOCAL_CONFIG_PATH, {"model_name": ""})
-    api_cfg = _load_json(API_CONFIG_PATH, {
+    cfg = _load_json(API_CONFIG_PATH, {
         "api_base_url": "https://api.deepseek.com/v1/",
         "api_key": "",
         "api_model_name": "",
+        "local_model_name": "",
     })
     # 脱敏 API Key
+    api_cfg = dict(cfg)
     if api_cfg.get("api_key"):
         api_cfg["api_key_masked"] = api_cfg["api_key"][:8] + "***"
 
     return {
-        "local_model": local_cfg.get("model_name", config.MODEL_NAME),
+        "local_model": cfg.get("local_model_name", config.MODEL_NAME),
         "api_config": api_cfg,
-        "current_model": ai.MODEL or local_cfg.get("model_name", config.MODEL_NAME),
+        "current_model": ai.MODEL or cfg.get("local_model_name", config.MODEL_NAME),
         "ollama_url": config.OLLAMA_BASE_URL,
         "temperature": config.TEMPERATURE,
         "max_tokens": config.MAX_TOKENS,
@@ -158,9 +158,9 @@ async def select_model(req: Request):
 
     if source == "local":
         model_name = body.get("model_name", config.MODEL_NAME)
-        local_cfg = _load_json(LOCAL_CONFIG_PATH, {"model_name": ""})
-        local_cfg["model_name"] = model_name
-        _save_json(LOCAL_CONFIG_PATH, local_cfg)
+        cfg = _load_json(API_CONFIG_PATH, {})
+        cfg["local_model_name"] = model_name
+        _save_json(API_CONFIG_PATH, cfg)
         from openai import OpenAI
         client = OpenAI(base_url=config.OLLAMA_BASE_URL, api_key="ollama")
         ai.init_client(client, model_name)
@@ -173,11 +173,11 @@ async def select_model(req: Request):
     if not api_key or not model_name:
         return {"ok": False, "error": "API Key 和模型名不能为空"}
 
-    api_cfg = _load_json(API_CONFIG_PATH, {})
-    api_cfg["api_key"] = api_key
-    api_cfg["api_base_url"] = base_url
-    api_cfg["api_model_name"] = model_name
-    _save_json(API_CONFIG_PATH, api_cfg)
+    cfg = _load_json(API_CONFIG_PATH, {})
+    cfg["api_key"] = api_key
+    cfg["api_base_url"] = base_url
+    cfg["api_model_name"] = model_name
+    _save_json(API_CONFIG_PATH, cfg)
 
     from openai import OpenAI
     client = OpenAI(base_url=base_url, api_key=api_key)
@@ -314,27 +314,27 @@ async def reload_skills_api():
 
 def auto_init_model():
     """启动时自动加载已保存的模型配置，初始化 AI 客户端。"""
-    local_cfg = _load_json(LOCAL_CONFIG_PATH, {"model_name": ""})
-    api_cfg = _load_json(API_CONFIG_PATH, {
+    cfg = _load_json(API_CONFIG_PATH, {
         "api_base_url": "https://api.deepseek.com/v1/",
         "api_key": "",
         "api_model_name": "",
+        "local_model_name": "",
     })
 
     from openai import OpenAI
 
     # 优先尝试 API 配置
-    if api_cfg.get("api_key") and api_cfg.get("api_model_name"):
+    if cfg.get("api_key") and cfg.get("api_model_name"):
         try:
-            client = OpenAI(base_url=api_cfg["api_base_url"], api_key=api_cfg["api_key"])
-            ai.init_client(client, api_cfg["api_model_name"])
-            print(f"[OK] Auto-loaded API model: {api_cfg['api_model_name']}")
+            client = OpenAI(base_url=cfg["api_base_url"], api_key=cfg["api_key"])
+            ai.init_client(client, cfg["api_model_name"])
+            print(f"[OK] Auto-loaded API model: {cfg['api_model_name']}")
             return
         except Exception as e:
             print(f"[WARN] API model load failed: {e}")
 
     # 回退到本地模型
-    model_name = local_cfg.get("model_name") or config.MODEL_NAME
+    model_name = cfg.get("local_model_name") or config.MODEL_NAME
     client = OpenAI(base_url=config.OLLAMA_BASE_URL, api_key="ollama")
     ai.init_client(client, model_name)
     print(f"[OK] Auto-loaded local model: {model_name}")
