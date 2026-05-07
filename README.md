@@ -52,8 +52,6 @@ pip install -r requirements.txt
 # 3. 安装 Ollama 并拉取模型
 ollama pull deepseek-r1:7b
 
-# 4. （可选）安装 OCR 支持，提升消息读取准确性
-pip install easyocr
 ```
 
 ### 验证安装
@@ -97,14 +95,17 @@ python wechat_bot.py
 王五
 ```
 
-### 2. 修改配置（可选）
-编辑`api_config.json`按需调整:
+### 2. 修改配置
+在webui设置选项中可以直接修改
+
+(可选)编辑`api_config.json`按需调整:
+
 `api_key` -第三方api_key
 `api_base_url` -第三方的url
 `api_model_name` -第三方大模型的模型名称
 `local_model_name` -本地模型名称
 
-编辑 `config.py` 按需调整：
+(可选)编辑 `config.py` 按需调整：
 
 - `MODEL_NAME` — AI 模型名称（默认 `deepseek-r1:7b`）
 - `POLL_INTERVAL` — 传统模式轮询间隔（默认 1 秒）
@@ -158,8 +159,3 @@ web_server.exe
 | `names.txt` | 监听好友列表 |
 | `requirements.txt` | Python 依赖清单 |
 |`api_config.json`|第三方api和本地大模型模型的配置|
-
-
-## License
-
-MIT
