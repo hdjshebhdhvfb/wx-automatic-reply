@@ -1,4 +1,4 @@
-# DeepSeek 微信自动回复系统 v2.0
+# DeepSeek 微信自动回复系统 v1.0.0
 
 基于 **WeFlow** 和 **Ollama** 的微信 AI 自动回复机器人。通过 WeFlow SSE 实时推送接收微信消息，调用 Ollama 本地部署的 DeepSeek 模型生成回复，再通过 Windows UI 自动化将回复发送回微信。
 
