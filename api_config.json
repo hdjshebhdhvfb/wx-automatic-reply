@@ -1,0 +1,6 @@
+{
+    "api_key": "输入API Key",
+    "api_base_url": "输入API Base URL",
+    "api_model_name": "模型名称",
+    "local_model_name": "本地模型名称"
+}

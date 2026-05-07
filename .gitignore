@@ -1,8 +1,0 @@
-api_config.json
-__pycache__/
-*.pyc
-build/
-dist/
-*.spec
-chat_history.db
-/__pycache__
