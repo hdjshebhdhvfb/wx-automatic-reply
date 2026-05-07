@@ -36,6 +36,8 @@
 | `uiautomation >= 2.0.0` | Windows UI 自动化，检测微信窗口和控件 |
 | `pyperclip >= 1.8.0` | 系统剪贴板读写 |
 | `pyautogui >= 0.9.0` | 截图、鼠标移动和键盘模拟 |
+| `fastapi>=0.104.0` | Web 框架 |
+| `uvicorn>=0.24.0` | ASGI 服务器 |
 
 ## 安装步骤
 
@@ -50,8 +52,6 @@ pip install -r requirements.txt
 # 3. 安装 Ollama 并拉取模型
 ollama pull deepseek-r1:7b
 
-# 4. （可选）安装 OCR 支持，提升消息读取准确性
-pip install easyocr
 ```
 
 ### 验证安装
@@ -81,6 +81,7 @@ python wechat_bot.py
 - **自然回复延迟** — 可配置回复延迟，模拟真人打字节奏
 - **去重机制** — 消息级去重，避免重复回复
 - **可定制 AI 风格** — 通过 `config.py` 中的系统提示词自定义回复风格
+- **可以配置自己蒸馏出的skill** — 通过`skills`文件夹配置
 
 ## 使用方法
 
@@ -94,9 +95,17 @@ python wechat_bot.py
 王五
 ```
 
-### 2. 修改配置（可选）
+### 2. 修改配置
+在webui设置选项中可以直接修改
 
-编辑 `config.py` 按需调整：
+(可选)编辑`api_config.json`按需调整:
+
+`api_key` -第三方api_key
+`api_base_url` -第三方的url
+`api_model_name` -第三方大模型的模型名称
+`local_model_name` -本地模型名称
+
+(可选)编辑 `config.py` 按需调整：
 
 - `MODEL_NAME` — AI 模型名称（默认 `deepseek-r1:7b`）
 - `POLL_INTERVAL` — 传统模式轮询间隔（默认 1 秒）
@@ -116,30 +125,11 @@ ollama serve
 # 3. 确保 WeFlow 正在运行
 
 # 4. 启动程序
-python app.py
+web_server.exe
 
-# 5. 按 Ctrl+C 安全退出
-```
+# 5. 浏览器访问 (http://localhost:8000/)
 
-### 4. 使用打包好的 EXE
-
-下载 Release 中的 `wx2.exe`，将 `names.txt` 放在同一目录下，双击运行即可（无需安装 Python）。
-
-## 架构设计
-
-```
-WeFlow SSE 推送
-      │
-      ▼
-  sse_client.py ─── 接收实时消息推送
-      │
-      ▼
-  app.py ─── 主控逻辑：消息匹配 → AI 调用 → 发送回复
-      │
-      ├── ai.py ──── 通过 Ollama API 调用本地 DeepSeek 模型
-      ├── db.py ──── SQLite 聊天历史持久化
-      ├── config.py ─ 全局配置
-      └── wechat_bot.py ─ 微信窗口自动化（查找窗口 / 读消息 / 发送消息）
+# 6. 在控制台中按 Ctrl+C 安全退出
 ```
 
 ### 消息读取策略（wechat_bot.py）
@@ -148,7 +138,6 @@ WeFlow SSE 推送
 |------|------|------|------|
 | UIA | 直接读取微信 UI 控件文本 | 最快 | 随微信版本变化可能失效 |
 | 剪贴板 | 点击消息 → Ctrl+C → 读取剪贴板 | 通用可靠 | 需要鼠标操作 |
-| OCR | 截图消息区域 → OCR 识别 | 最鲁棒 | 速度较慢，需额外依赖 |
 
 ### 两种运行模式
 
@@ -169,7 +158,4 @@ WeFlow SSE 推送
 | `config.py` | 全局配置文件 |
 | `names.txt` | 监听好友列表 |
 | `requirements.txt` | Python 依赖清单 |
-
-## License
-
-MIT
+|`api_config.json`|第三方api和本地大模型模型的配置|
