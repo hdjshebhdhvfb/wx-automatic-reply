@@ -91,7 +91,7 @@ WEFLOW_SSE_ENABLED = True
 WEFLOW_BASE_URL = 'http://127.0.0.1:5031'
 
 # API Access Token
-WEFLOW_ACCESS_TOKEN = '53e54f9ad19bc1af50649fcb15026e9f'
+WEFLOW_ACCESS_TOKEN = ''
 
 # SSE 推送地址（接收实时消息推送）
 WEFLOW_SSE_URL = f'{WEFLOW_BASE_URL}/api/v1/push/messages?access_token={WEFLOW_ACCESS_TOKEN}'
